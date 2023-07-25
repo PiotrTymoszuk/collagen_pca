@@ -1,0 +1,394 @@
+---
+title: "Prognostic and biologic relevance of collagen biosynthesis pathway in prostate cancer"
+subtitle: "Manuscript file"
+date: "`r format(Sys.time(), '%Y-%m-%d')`"
+
+author: 
+  - Isabel Heidegger:
+      institute: [uro]
+  - Maria Frantzi:
+      institute: [mos]
+  - Piotr Tymoszuk:
+      institute: [daas]
+  - Georgios Fotakis:
+      institute: [bioinf]
+  - Christian Langer:
+      institute: [radio]
+  - Friedrich Aigner:
+      institute: [radio]
+  - Zlatko Trajanoski:
+      institute: [bioinf]
+  - Harald Mischak:
+      institute: [mos]
+  - Dominik Wolf:
+      institute: [onco]
+  - Andreas Pircher: 
+      institute: [onco]
+      email: andreas.pircher@i-med.ac.at
+      correspondence: true
+
+institute:
+  - uro: Department of Urology, Medical University of Innsbruck, Innsbruck, Austria
+  - daas: Data Analytics As a Service Tirol, Innsbruck, Austria
+  - mos: Mosaiques-diagnostics GmbH, Hannover, Germany
+  - bioinf: Biocenter, Institute of Bioinformatics, Medical University of Innsbruck, Austria
+  - radio: Department of Radiology, Medical University of Innsbruck, Innsbruck, Austria
+  - onco: Department of Internal Medicine V, Hematology and Oncology, Medical University of Innsbruck, Innsbruck, Austria
+  
+keywords: "prostate cancer, collagen, cancer biology, clustering, machine learning"
+
+output: 
+  bookdown::word_document2:   
+    reference_docx: ms_template.docx
+
+bibliography: coll_biblio.bib
+
+csl: frontiers-in-immunology.csl
+
+header-includes:
+  \usepackage{longtable}
+  \usepackage{tabu}
+  \usepackage{caption}
+  \usepackage{makecell}
+  \usepackage{pdflscape}
+  \usepackage{array}
+  \usepackage{booktabs}
+  \usepackage{threeparttable}
+  \usepackage{threeparttablex}
+  \usepackage{wrapfig}
+  \usepackage{multirow}
+  \usepackage[normalem]{ulem}
+  \usepackage{colortbl}
+  \usepackage{xcolor}
+  \usepackage{float} \floatplacement{figure}{H} \floatplacement{table}{H}
+  \newcommand{\beginsupplement}{\setcounter{table}{0}  \renewcommand{\thetable}{S\arabic{table}}       \setcounter{figure}{0} \renewcommand{\thefigure}{S\arabic{figure}}}
+---
+
+```{r, setup, include = FALSE}
+
+library(bookdown)
+library(flextable)
+
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, 
+                      dev = "png", dpi = 600, 
+                      tab.cap.pre = 'Supplementary Table ', tab.cap.sep = " ", 
+                      tab.cap.style = 'Table Heading')
+
+set_flextable_defaults(font.family = 'Cambria', font.size = 10)
+
+
+```
+
+\newpage
+
+# Introbuction
+
+-- To be completed -----
+
+\newpage
+
+# Methods
+
+## Multiparametric resonance tomography
+
+-- To be completed -----
+
+## Transcriptome data analysis
+
+A detailed description of the transcriptome analysis procedures is provided in __Supplementary Methods__.
+
+### Software
+
+Transcriptome data was analyzed with R version 4.2.0. 
+Basic data transformation tasks and result visualization were accomplished with the _tidyverse_, _rlang_, _ggplot2_ and _cowplot_ packages [@Wickham2019; @Henry2022; @Wickham2016; @Wilke2019]. 
+Additional result visualization tools included the 
+_ggvenn_ (Venn plots) [@Yan2021], 
+_microViz_ (https://github.com/PiotrTymoszuk/microViz, volcano and Forest plots), 
+_ExDA_ (https://github.com/PiotrTymoszuk/ExDA, violin and ribbon plots), 
+_survminer_ [@Kassambara2016] and _coxExtensions_ (https://github.com/PiotrTymoszuk/coxExtensions) (Kaplan - Meier plots), 
+_factoextra_ [@Kassambara2020] and _clustTools_ (https://github.com/PiotrTymoszuk/clustTools) packages (cluster diagnostic graphs and heat maps).
+
+### Study cohorts and genes of interest
+
+The following cohorts were re-analyzed: 
+(1) The Cancer Gene Atlas (TCGA) prostate cancer data set [@Abeshouse2015] (n = `r study_data$tcga$expression %>% filter(tissue == 'tumor') %>% nrow` cancer samples, n = `r study_data$tcga$expression %>% filter(tissue == 'benign') %>% nrow` matched normal prostate tissue samples), 
+(2) GSE16560 (n = `r study_data$GSE16560$expression %>% nrow` cancer samples) [@Sboner2010], 
+(3) GSE40272 (n = `r study_data$GSE40272$expression %>% filter(tissue == 'tumor') %>% nrow` cancer samples and n = `r study_data$GSE40272$expression %>% filter(tissue == 'benign') %>% nrow` matched normal prostate tissue samples) [@Gulzar2013], 
+(4) GSE70768 (n = `r study_data$GSE70768$expression %>% filter(tissue == 'tumor') %>% nrow` cancer samples and n = `r study_data$GSE70768$expression %>% filter(tissue == 'benign') %>% nrow` matched normal prostate tissue samples) [@Ross-Adams2015] and 
+(5) GSE70769 (n = `r study_data$GSE70769$expression %>% nrow` cancer samples) [@Ross-Adams2015]. 
+
+The clinical and normalized level 3 RNAseq data for the TCGA cohort were downloaded with the TCGA Assembler 2 script (https://github.com/compgenome365/TCGA-Assembler-2/blob/master/TCGA-Assembler/). 
+The clinical and author-provided normalized microarray expression data for the remaining collectives were fetched from the Gene Expression Omnibus (GEO) with an in-house developed script available within the study analysis pipeline.
+The available clinical information included age, blood PSA concentration at diagnosis,
+Gleason scoring and pathological tumor, node and metastasis staging, overall (GSE16560) and biochemical relapse-free survival (remaining cohorts) (__Table \@ref(tab:tab-cohorts)__). 
+The gene expression values were presented as log~2~(Expression) or log~2~(TranscriptCount + 1). 
+Expression data annotation was accomplished with the packages _AnnotationDbi_ [@Pages2022] and _org.Hs.eg.db_ [@Carlson2022].
+Non-malignant cell content in tumor samples were estimated with the MCP Counter [@Becht2016] and xCell algorithms [@Aran2017] (package _immunodeconv_) [@Sturm2019].
+
+The collagen pathway genes included the published Collagen Signature [@Kocher2021] and the Reactome Collagen
+formation pathway (R-HSA-1474290) and was constrained to `r nrow(globals$genes_interest)` genes detected in all cohorts (__Table \@ref(tab:tab-genes)__).
+
+### Hypothesis testing, correlation and multiple testing correction
+
+Differences in gene expression between the matched prostate cancer and normal prostate tissue samples were investigated with two-tailed paired T test. 
+Differences in infiltration levels and Gleason scores between tumor sample clusters were assessed by Kruskal-Wallis test with $\eta^2$ effect size statistic. 
+Differences in the collagen score between clusters were analyzed with one-way ANOVA with $\eta^2$ effect size statistic. 
+Pair-wise correlation of the collagen pathway genes was assessed by Pearson's correlation test. 
+Correlation of the collagen scores and Gleason scores was investigated by Spearman's correlation test. 
+If not indicate otherwise, p values within each analysis task were corrected for multiple testing with Benjamini-Hochberg method [@Benjamini1995]. 
+Base R functions (_t.test()_, _cor.test()_, _aov()_) and tools provided by the packages _rstatix_ [@Kassambara2021], _microViz_ and _ExDA_ were used for statistical hypothesis testing and correlation analysis.
+
+### Semi-supervised clustering
+
+Clustering of the TCGA cohort tumor samples in respect to normalized (Z-score) collagen pathway gene expression was accomplished by the PAM (partition around medoids) algorithm with the Manhattan distance measure (packages _cluster_, _philentropy_ and _ClustTools_) [@Drost2018; @Schubert2019]. 
+This procedure was characterized by a good explanatory performance measured by 'explained' clustering variance and the superior rate of correct cluster assignment in 10-fold cross-validation (package _clustTools_) [@Lange2004; @Leng2014] (__Supplementary Figure S6A__). 
+The number of clusters, n = 3, was chosen based on the bend of the within-cluster sum of square curve and the peak of the mean silhouette statistic (__Supplementary Figure S6BC__). 
+The clusters were named according to the increasing expression of the collagen subunit genes as: Collagen^low^, Collagen^intermediate^ and Collagen^high^. 
+Assignment of tumor samples from the test collectives (GSE16560, GSE40272, GSE70768 and GSE70769) to the collagen clusters was done by the k-NN classifier (k-nearest neighbors, k = 7, package _clustTools_) [@Sahanic2021; @Leng2014]. 
+The quality of semi-supervised clustering was assessed by comparing the 'explained' clustering variance measure between the training and test cohorts (__Supplementary Figure S6D__).
+
+### Differential gene expression, GO enrichment and signaling modulation between tumor sample clusters
+
+Genes differentially expressed between the collagen clusters were identified by one-way ANOVA and linear modeling with Benjamini-Hochberg correction for multiple testing (FDR: false discovery rate, package _microViz_) [@Benjamini1995]. 
+Transcripts significantly regulated in the Collagen^intermediate^ versus Collagen^low^ clusters (__Supplementary Table S1__) and transcripts significantly regulated in the Collagen^high^ versus Collagen^low^ clusters (__Supplementary Table S2__) were identified by the following criteria: 
+(1) significance in ANOVA (pFDR~ANOVA~ < 0.05) and 
+(2) significant regulation versus the Collagen^low^ cluster in linear modeling (pFDR($\beta$) < 0.05). 
+
+Biological process gene ontology (GO) enrichment in the genes significantly regulated between the collagen clusters was analyzed with the _goana()_ function from the _limma_ package [@Young2010]. 
+Modulation of KEGG-listed signaling pathways based on fold-regulation estimates of the significantly regulated genes was done with the _SPIA_ package [@Tarca2009]. 
+GO enrichment and signaling modulation p values were corrected for multiple testing with Benjamini-Hochberg method [@Benjamini1995]. 
+
+Pooled estimates of regulation of gene expression versus the Collagen^low^ cluster in the study cohorts were computed with the inverse variance method (package _meta_) [@Balduzzi2019]. 
+Based on pooled regulation estimates, modulation of particular components of signaling pathways was visualized with the _pathview_ package [@Luo2013].
+
+### Prediction of differences in biochemical reaction modulation 
+
+Gene - biochemical reaction assignment rules were were retrieved from the Recon2 human metabolism model (BiGG database and R package _BiGGR_) [@King2016; @Gavai2015]. 
+Estimates of biochemical reaction fold-regulation were computed based on the estimates of whole-genome gene expression differences between the clusters and their standard errors obtained by linear modeling as described for the differential gene expression analysis. 
+Such analysis followed the gene - protein - reaction (GPR principle) as described by Gavai et al. [@Gavai2015]. 
+Biochemical reaction regulation estimate errors, 95% confidence intervals and significance were computed with a Monte Carlo simulation with n = 1000 random normal distribution samplings of the gene regulation estimates. 
+The analysis was done with the package _BiGGR_ [@Gavai2015] and the development package _biggrExtra_ (https://github.com/PiotrTymoszuk/biggrExtra). 
+Pooled estimates of fold-regulation of reaction regulation versus the Collagen^low^ cluster were computed with the inverse variance method implemented by the package _meta_ [@Balduzzi2019] and visualized in Forest plots.
+
+### Collagen score development and survival modeling
+
+The collagen score was developed based on normalized (Z-score) expression of the collagen pathway genes in the TCGA training cohort with the Elastic Net Cox modeling and biochemical relapse-free survival as a response variable (package _glmnet_) [@Friedman2010; @Simon2011; @Zou2005]. 
+The shrinkage parameter $\lambda$ was found by 200-repeat 10-fold cross-validation (function _cv.glmnet()_) and corresponded to the lowest model deviance [@Friedman2010]. 
+The collagen score was defined as the linear predictor score of the Elastic Net model fitted with the optimal $\lambda$ parameter (function _glmnet()_) and was computed for the training and the test collectives (GSE16560, GSE40272, GSE70768 and GSE70769) with the _predict.glmnet()_ method. 
+The non-zero Elastic Net model coefficients fitted in the training cohort were extracted with the _coef.glmnet()_ method and exponentiated to obtain hazard ratios (HR).
+
+Survival modeling for the collagen score was done with univariable Cox regression or by multivariable Cox regression with age and Gleason score confounders (packages _survival_ and _coxExtensions_) [@Therneau2000]. 
+Calibration of the univariable collagen score stratified by tertiles (low, intermediate and high) was tested with the D'Agostino - Nam $\chi^2$ statistic (package _coxExtensions_) [@DAgostino2003].
+
+## Proteomics
+
+-- To be completed ------
+
+## Data and code availability
+
+Publicly available data sets were analyzed. 
+The transcriptome R analysis pipeline is available from GitHub (https://github.com/PiotrTymoszuk/collagen_pca).
+
+\newpage
+
+# Results
+
+## Prostate cancer is identified as a stiff, bona-fide collagen rich lesion by mpMRI
+
+mpMRI is considered a standard diagnostic procedure prior to prostate biopsy. 
+We examined mpMRI data for presence of fibrosis in n = ... patients with suspected prostate malignancy due to elevated PSA levels. 
+As shown in __Figure XY__ (or Table?), cancer areas defined as ... harbored significantly more fibrotic regions than adjacent benign tissue. 
+This suggests collagen accumulation and/or enhanced collagen turnover as a characteristic of prostate cancer.
+
+## Collagen synthesis genes are upregulated in prostate carcinoma
+
+To validate that at the molecular biology level, we compared mRNA expression levels of `r nrow(globals$genes_interest)` genes related to collagen synthesis, post-translational modification and degradation (__Table \@ref(tab:tab-genes)__) between prostate cancer and benign prostate tissue samples in three publicly available data sets (TCGA, GSE40272 and GSE70768) [@Abeshouse2015; @Gulzar2013; @Ross-Adams2015]. 
+Two genes involved in synthesis of proline, the limiting aminoacid for collagen production, _ALDH18A1_ and _PYCR1_, along with two genes involved in isomerization and cross-linking of collagen chains, _P4HB_ and _PPIB_, were expressed at significantly higher levels in the cancer tissue than in normal prostate in all analyzed collectives. 
+This may suggest a faster rate of collagen synthesis in prostate cancer as compared with the normal gland. 
+In turn, genes coding for the collagen IV subunit (_COL4A2_) and a laminin protein (_LAMB3_) were significantly downregulated in prostate carcinoma in all investigated collectives (__Figure \@ref(fig:fig-norm-tumor)__, __Supplementary Figures S1__ and __S2__).
+
+## Biologically distinct Collagen^low^, Collagen^intermediate^ and Collagen^high^ subsets of prostate cancers
+
+To get an in-depth insight of biological consequences of collagen pathway regulation in prostate carcinoma, we resorted to a transcriptome analysis of five publicly available data sets: TCGA [@Abeshouse2015], GSE16560 [@Sboner2010], GSE40272 [@Gulzar2013], GSE70768 [@Ross-Adams2015] and GSE70769 [@Ross-Adams2015].
+
+Analysis of co-expression of the collagen pathway genes in cancer tissue samples revealed a consistent, positive co-regulation pattern of the collagen I, IV, V and IV subunit genes which was evident in all five collectives. 
+Such transcript tended to be regulated together with genes linked to proteolytic modification and secretion of pro-collagens (_PCOLCE_) and collagen lysine oxidation (_LOX_, _LOXL1_, _LOXL2_) (__Supplementary Figures S3 - S5__).
+
+By means of semi-supervised PAM clustering of tumor samples in respect to `r nrow(globals$genes_interest)` collagen pathway genes of interest [@Schubert2019], three subsets of prostate carcinoma could be identified (__Supplementary Figure S6A - C__). 
+Of note, this clustering structure developed in the training TCGA cohort was highly reproducible in two test cohorts (GSE70768 and GSE70769) and moderately conserved in the remaining two test collectives (GSE16560 and GSE40272) as measured by the explained clustering variances and observed in visual analysis of the collagen gene expression heat maps (__Supplementary Figures S6D__ and __S7__). 
+The most conspicuous differences between the newly identified cancer sample clusters concerned expression of collagen subunit genes such as _COL1A1_, _COL1A2_, _COL3A1_, _COL4A1_ or _COL6A3_ along with the differing levels of transcripts of collagen processing proteins _LOXL1_ and _PCOLCE_. 
+Differences in expression of genes involved in proline synthesis and recycling (_ALDH18A1_, _PYCR1_ and _PEPD_) between the clusters were minor. 
+Based on these differing levels of collagen subunit and modification protein gene levels, we named the cancer subsets identified by the clustering analysis Collagen^low^, Collagen^intermediate^ and Collagen^high^ clusters. 
+Of note, 47 - 71% of cancer samples were classified as Collagen^intermediate^, followed by the Collagen^low^ (19 - 31%) and Collagen^high^ clusters (10 - 22% of specimens) (__Figure \@ref(fig:fig-clusters)__, __Supplementary Figure S7__). 
+
+In three collectives (TCGA, GSE16560, GSE70769), the collagen cluster assignment was significantly associated with Gleason score, with the highest values observed in the Collagen^high^ tumors (__Supplementary Figure S8__). 
+This may indicate, that increased collagen production may be a hallmark of prostate cancer progression.
+
+Concerning cellular composition of the tumor microenvironment (TME), Collagen^high^ and Collagen^intermediate^ cancers were characterized by an elevated infiltration by cancer-associated fibroblasts (CAF) and endothelial cells predicted by the MCP counter deceonvolution procedure [@Becht2016] in all investigated cohorts (__Figure \@ref(fig:fig-infil)__). 
+Levels of lymphocyte and myeloid leukocytes in the TME predicted by the MCP counter algorithm were in turn comparable between the collagen clusters (_Supplementary Figure S9__). 
+Importantly, the significantly altered levels of CAF and endothelial cells in the clusters were corroborated in an analysis with another deconvolution algorithm, xCell [@Aran2017], in the majority of study cohorts (CAF: TCGA, GSE16560 and GSE70768, endothelial cells: TCGA, GSE40272, GSE70768 and GSE70769, __Supplementary Figure S10__). 
+Collectively, this suggests a strong interplay between collagen accumulation and CAF levels in the TME of prostate cancer along with an increased pace of angiogenesis in collagen-rich malignancies.
+
+Next, we delved into alteration of transcriptome in the collagen clusters. 
+Genes significantly regulated between the clusters were identified by multiple testing-corrected one-way ANOVA and linear modeling with the Collagen^low^ clusters serving as a reference level [@Benjamini1995]. 
+Among the genes most significantly upregulated in Collagen^high^ or Collagen^intermediate^ tumors, transcripts of collagen subunit (_COL1A2_, _COL3A1_, _COL4A1_, _COL4A_, _COL5A1_), proteins involved in collagen processing (_PCOLCE_, _TIMP2_), extracellular matrix (ECM) proteins (_SPARC_), a cytoskeleton protein (_MFAP4_) and a pro-angiogenic signaling receptor (_PDGFRB_) were identified in at least two cohorts (__Supplementary Figures S11 - S13__, __Supplementary Tables S1 - S2__).
+The subsequent GO term enrichment analysis within the sets of genes significantly regulated in the Collagen^intermediate^ and the Collagen^high^ cancers pertained to organ and tissue developmental processes, ECM organization, cell differentiation and motility and vasculature development as leading biological processes significantly modulated in collagen-rich prostate cancer (__Figure \@ref(fig:fig-go)__, __Supplementary Figures S14 - S15__). 
+As found with the SPIA algorithm [@Tarca2009], three signaling pathways were predicted to be activated in the Collagen^intermediate^ tumors as compared with the Collagen^low^ prostate cancers: focal adhesion, ECM-receptor interaction and regulation of actin cytoskeleton in all investigated cohorts. 
+The predicted magnitude of their activation was even higher in the Collagen^high^ cluster. 
+In addition, the Collagen^high^ tumors displayed a consistent and strong (14 - 28 fold) activation of the KEGG's small cell lung cancer signaling pathway as compared with the Collagen^low^ cluster (__Figure \@ref(fig:fig-spia)__). 
+At the levels of single components of the focal adhesion, ECM-receptor interaction and actin cytoskeleton pathways, an enhanced integrin and growth factor signaling in the Collagen^intermediate^ and Collagen^high^ tumors is predicted to trigger the PI3K/AKT/PAK cascade resulting in cell proliferation and apoptosis inhibition. 
+Furthermore, the ROCK/MLC circuit activated in collagen-rich tumors is expected to stimulate cell motility (__Supplementary Figure S16 - S18__). 
+Modulation of the small cell lung cancer pathway genes was in turn predicted to activate the NF-$\kappa$B cascade and the downstream anti-apoptotic, growth and angiogenic signaling (__Supplementary Figure S19__). 
+Another signaling pathways predicted to be activated in collagen-rich cancers in at least two study collectives included 'pathways in cancer', 'leukocyte transendothelial migration' and inflammatory 'Staphylococcus aureus infection' (__Supplementary Figures S20 - S22__).
+
+Differences in metabolism between the Collagen clusters concerned primarily energy metabolism, fatty acid synthesis and fatty acid oxidation, katabolism of amininoacid amine group and turnover of glycan moieties of extracellular matrix components. 
+Furthermore, Collagen^high^ tumors were predicted to have a lower activity of fatty acid synthesis and transport reactions (__Supplementary Figures S23 - S24__, __Supplementary Tables S3 - S4__).
+
+In more details, the rates of multiple reactions involved in fatty acid oxidation, tri-carboxylic acid cycle (TCA) and oxidative phosphorylation were predicted to be significantly lower in the Collagen^intermediate^ cluster than in the Collagen^low^ subset. 
+These differences were even larger in Collagen^high^ cancers as compared with Collagen^low^ tumors (__Supplementary Figures S25 - S27__). 
+
+Collectively, as indicated by the results of infiltration, transcriptome, GO enrichment, signaling and biochemical reaction analysis, the Collagen^low^, Collagen^intermediate^ and Collagen^high^ clusters represent biologically distinct sub-entities of prostate cancers. 
+The increasing expression of collagen and ECM component genes may be paralleled by malignancy progression, increasing CAF infiltration and may drive tumor cell proliferation, resistance to apoptosis, tumor angiogenesis as well as suppression of oxidative energy metabolism and fatty acid oxidation.
+
+## Collagen gene expression predicts prostate cancer survival
+
+We asked how alterations of the collagen pathway gene expression impact on prostate cancer survival and relapse risk. 
+By multi-parameter Elastic Net Cox modeling of biochemical relapse-free survival [@Zou2005; @Simon2011] in the TCGA training cohort employing the collagen pathway genes of interest as an initial explanatory variable set, we established a so called 'Collagen Score'. 
+
+Collagen Score included expression values of `r coll_score$coefs %>% nrow` collagen pathway genes. 
+Among them, the collagen subunit genes _COL1A1_ and _COL10A1_ and the pro-collagen lysine oxidase _PLOD3_ were found prominently associated with an increased relapse risk. 
+In turn, the collagen gene _COL14A1_, collagen-modifying enzyme genes _LOX_ and _PPIB_ as well as _PEPD_ involved in collagen degradation constituted the most important favorable components of the Collagen Score signature (__Figure \@ref(fig:fig-coll-score)A__). 
+In the training TCGA cohort and the test cohorts GSE16560 and GSE70769, Collagen Score values correlated significantly with increasing Gleason score (__Supplementary Figure S28A__). 
+Additionally, in all investigated collectives, Collagen Score levels were significantly higher in the Collagen^intermediate^ and Collagen^high^ cluster cancers than in the Collagen^low^ cluster. 
+The maxima of Collagen Score were consistently found in Collagen^high^ cancers (__Supplementary Figure S28B__). 
+These two observations suggest increasing values of the Collagen Score in progressing and collagen-rich prostate tumors. 
+
+In univariate survival Cox modeling, Collagen Score was significantly associated with poorer biochemical relapse-free survival in the training TCGA cohort and the test GSE70768 and GSE70768 collectives as indicated by significant hazard ratios and concordance indexes. In those collectives, Collagen score was able to explain 26 - 48% of variance in biochemical relapse-free survival (__Figure \@ref(fig:fig-coll-score)BC__, __Supplementary Figure S29__). 
+Furthermore, low, intermediate and high tertile strata of Collagen Score correctly identified individuals with increasing recurrence risk indicative of good calibration of Collagen Score (__Figure \@ref(fig:fig-coll-score-km)__). 
+Finally, in the TCGA, GSE70768 and GSE70768 cohorts, Collagen Score retained its prediction performance in multi-parameter Cox regression with age and Gleason score as confounders (__Supplementary Figure S29__). 
+In turn, association of Collagen Score with biochemical relapse-free survival in the remaining GSE40272 and GSE16560 cohorts was not significant.
+
+Collectively, the results of survival modeling suggest that a multi-gene Collagen Score being a proxy of enhanced and altered collagen content in prostate cancer may represent an independent marker of biochemical relapse-free survival.
+
+\newpage
+
+# Discussion
+
+-- To be filled in ----
+
+\newpage
+
+# Tables
+
+```{r tab-cohorts, tab.cap = 'Characteristic of the analyzed cohorts.'}
+
+flextable(paper_tbl$cohorts) %>% 
+  width(1, width = 3, unit = 'cm') %>% 
+  width(2:6, width = 3.3, unit = 'cm') %>% 
+  theme_vanilla
+
+```
+
+\newpage
+
+```{r tab-genes, tab.cap = 'Collagen genes of interest and their classification.'}
+
+paper_tbl$genes %>% 
+  arrange(`Gene group`) %>% 
+  select(`Gene group`, `Gene symbol`, `Entrez ID`) %>% 
+  flextable %>% 
+  width(1, width = 3.5, unit = 'cm') %>% 
+  width(2:3, width = 2.5, unit = 'cm') %>% 
+  merge_v(j = 1) %>% 
+  theme_vanilla
+
+```
+
+\newpage
+
+# Figures
+
+```{r fig-norm-tumor, fig.width = mm_inch(paper_fig$norm_tumor$w), fig.height = mm_inch(paper_fig$norm_tumor$h), fig.cap = 'Expression of collagen pathway genes in the normal prostate and prostate cancer tissue.'}
+
+paper_fig$norm_tumor$plot
+
+```
+
+__Figure \@ref(fig:fig-norm-tumor). Expression of collagen pathway genes in the normal prostate and prostate cancer tissue.__ 
+_Differences in expression of the collagen pathway genes (`r nrow(globals$genes_interest)` transcripts) between the donor-matched samples of the normal prostate and prostate cancer tissue were analyzed by two-tailed paired T test in the TCGA, GSE40272 and GSE70768 cohorts. P values were corrected for multiple testing with Benjamini-Hochberg method._
+_(A) Numbers of transcripts significantly up- and down-regulated in the cancer tissue versus normal prostate tissue presented in Venn plots. Transcript significantly regulated in all analyzed cohorts are listed next to the plots._
+_(B) Benjamini-Hochberg-corrected significance (pFDR) and log~2~ fold regulation in the cancer tissue versus normal prostate tissue. Significantly up- and downregulated genes are labeled with their symbols. Numbers of tissue donors are indicated under the plots._
+
+\newpage
+
+```{r fig-clusters, fig.width = mm_inch(paper_fig$clusters$w), fig.height = mm_inch(paper_fig$clusters$h), fig.cap = 'Clustering of prostate cancers by collagen pathway gene expression.'}
+
+paper_fig$clusters$plot
+
+```
+
+__Figure \@ref(fig:fig-clusters). Clustering of prostate cancers by collagen pathway gene expression.__ 
+_Tumor samples were subjected to semi-supervised clustering in respect to the collagen pathway gene expression with the PAM algorithm with Manhattan distance metric (training: TCGA, test cohorts: GSE16560, GSE40272, GSE70768 and GSE70769). Mean normalized (Z-score) levels of the collagen pathway transcripts in the Collagen^low^, Collagen^intermediate^ and Collagen^high^ clusters are presented as thick lines. The tinted ribbons represent 2$\times$SEM (standard error of the mean) intervals. The collagen pathway genes were grouped according to their biological function as proline synthesis pathway, extracellular matrix (ECM) component and ECM processing protein genes. Numbers of samples in the clusters are indicated under the plots._
+
+\newpage
+
+```{r fig-infil, fig.width = mm_inch(paper_fig$infil$w), fig.height = mm_inch(paper_fig$infil$h), fig.cap = 'Estimates of cancer-associated fibroblast and endothelial cell infiltration in the collagen clusters.'}
+
+paper_fig$infil$plot
+
+```
+
+__Figure \@ref(fig:fig-infil). Estimates of cancer-associated fibroblast and endothelial cell infiltration in the collagen clusters.__ 
+_Levels of cancer-associated fibroblasts (CAF) (A) and endothelial cells (B) in the prostate cancer samples were estimated by the MCP counter algorithm. Differences in CAF and endothelial cell content between the Collagen^low^, Collagen^intermediate^ and Collagen^high^ clusters were analyzed with Kruskal-Wallis test with $\eta^2$ effect size statistic. P values were corrected for multiple testing with Benjamini-Hochberg method. Infiltration estimates are presented in violin plots. Points indicate single tumor samples. Red diamonds with whiskers represent medians with interquartile ranges. P and effect size statistic values are displayed in the plot captions. Numbers of samples in the clusters are indicated under the plots._
+
+\newpage
+
+```{r fig-go, fig.width = mm_inch(paper_fig$go$w), fig.height = mm_inch(paper_fig$go$h), fig.cap = 'Common biological process GO terms enriched in Collagen intermediate and Collagen high tumors.'}
+
+paper_fig$go$plot
+
+```
+
+__Figure \@ref(fig:fig-go). Common biological process GO terms enriched in Collagen^intermediate^ and Collagen^high^ tumors.__ 
+_Genes differentially regulated between the Collagen^intermediate^ and Collagen^low^ clusters and between the Collagen^high^ and Collagen^low^ clusters were identified by Benjamini-Hochberg-corrected one-way ANOVA and linear modeling. Biological process gene ontology (GO) term enrichment was investigated in the sets of significantly regulated genes with the goana tool._
+_GO terms found significantly enriched for the Collagen^intermediate^ (A) and for the Collagen^high^ tumors were identified and their enrichment Benjamini-Hochberg-corrected p values (pFDR) are presented in bubble plots. Point size and color corresponds to the -log~10~pFDR value._
+
+\newpage
+
+```{r fig-spia, fig.width = mm_inch(paper_fig$spia$w), fig.height = mm_inch(paper_fig$spia$h), fig.cap = 'Common regulated signaling pathways in Collagen intermediate and Collagen high tumors.'}
+
+paper_fig$spia$plot
+
+```
+
+__Figure \@ref(fig:fig-spia). Common regulated signaling pathways in Collagen^intermediate^ and Collagen^high^ tumors.__ 
+_Genes differentially regulated between the Collagen^intermediate^ and Collagen^low^ clusters and between the Collagen^high^ and Collagen^low^ clusters were identified by Benjamini-Hochberg-corrected one-way ANOVA and linear modeling. Signaling pathway modulation based on fold regulation estimates of the significantly regulated genes was investigated with the SPIA tool._
+_Signaling pathways found significantly modulated for the Collagen^intermediate^ (A) and for the Collagen^high^ tumors were identified and their magnitudes of regulation (tA metric, tA > 0 indicates activation) are presented in bubble plots. Point size and color corresponds to the tA value._
+
+\newpage
+
+```{r fig-coll-score, fig.width = mm_inch(paper_fig$coll_score$w), fig.height = mm_inch(paper_fig$coll_score$h), fig.cap = 'Development of the Collagen Score for prediction of prostate cancer survival.'}
+
+paper_fig$coll_score$plot
+
+```
+
+__Figure \@ref(fig:fig-coll-score). Development of the Collagen Score for prediction of prostate cancer survival.__ 
+_Collagen Score based on the normalized expression levels of the collagen pathway genes was developed in the TCGA training cohort using the elastic net Cox modeling algorithm with biochemical relapse-free survival (RFS) as a response. The optimal $\lambda$ penalty parameter was found by 200-repeat 10-fold cross-validation._
+_(A) Hazard ratio (HR) estimates for non-zero coefficients of the Collagen Score elastic net model in the TCGA are presented in a bubble plot. Point size corresponds to the absolute HR value. The points are labeled with HR values. The optimal $\lambda$ parameter is indicated in the plot caption. Numbers of complete observations and relapses are presented under the plot._
+_(B, C) Explanatory performance ($R^2$) (B) and prediction performance (concordance index [C] with 95% confidence intervals) (C) of the Collagen Score in the training TCGA cohort and the GSE16560, GSE40272, GSE70768 and GSE70769 test collectives. Type of the survival response (biochemical relapse-free [RFS] or overall survival [OS]) and numbers of complete observations are indicated in the Y axes of the plots._
+
+\newpage
+
+```{r fig-coll-score-km, fig.width = mm_inch(paper_fig$coll_score_km$w), fig.height = mm_inch(paper_fig$coll_score_km$h), fig.cap = 'Prediction of prostate cancer survival by the Collagen Score.'}
+
+paper_fig$coll_score_km$plot
+
+```
+
+__Figure \@ref(fig:fig-coll-score-km). Prediction of prostate cancer survival by the Collagen Score.__ 
+_The Collagen Score values in the training TCGA cohort and the GSE16560, GSE40272, GSE70768 and GSE70769 test collectives were stratified into tertiles (1^st^: low, 2^nd^: intermediate, 3^rd^: high). The observed (solid lines) and Collagen Score-modeled survival in for the Collagen Score strata was compared with the D'Agostino-Nam $\chi^2$ statistic ($\chi^2(DN)$) and presented in Kaplan-Meier plots. Values of concordance indexes (C) with 95% confidence intervals and $\chi^2(DN)$ statistic are presented in the plot captions. Type of the survival response (biochemical relapse-free [RFS] or overall survival [OS]) is indicated in the X axes of the plots. Numbers of complete observations and survival events are shown under the plots._
+
+\newpage
+
+# References
