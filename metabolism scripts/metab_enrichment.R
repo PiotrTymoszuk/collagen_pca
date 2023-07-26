@@ -124,7 +124,8 @@
                                OR > 1 & 
                                eff_size %in% c('small', 'medium', 'large'), 
                              'yes', 'no'), 
-        regulation = ifelse(significant == 'yes', status, 'ns'))
+        regulation = ifelse(significant == 'yes', status, 'ns'), 
+        cohort = factor(cohort))
   
   ## bubble plots
   
@@ -139,10 +140,11 @@
                       fill = regulation)) + 
            geom_point(shape = 21) + 
            geom_text(aes(label = signif(OR, 2), 
+                         x = as.numeric(cohort) + 0.2, 
                          alpha = significant, 
                          color = regulation), 
-                     size = 2.75, 
-                     hjust = -1.4, 
+                     size = 2.5, 
+                     hjust = 0, 
                      vjust = 0.5) +
            scale_fill_manual(values = c(activated = 'firebrick', 
                                         inhibited = 'steelblue', 
@@ -154,6 +156,9 @@
                               name = 'regulation\nstatus') + 
            scale_alpha_manual(values = c(no = 0.25, 
                                          yes = 1)) +
+           scale_radius(limits = c(0, 6.5), 
+                        range = c(0.5, 5), 
+                        name = 'OR') + 
            scale_x_discrete(labels = globals$study_labels) + 
            scale_y_discrete(labels = function(x) stri_replace_last(x, 
                                                                    fixed = ' and', 

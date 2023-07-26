@@ -136,13 +136,16 @@
               w = 180, 
               h = 230)
   
-# Figure 4: GO enrichment, collagen clusters ------
+# Figure 4: GSVA, collagen clusters ------
   
   insert_msg('Figure 4: collagen clusters, GO enrichment')
   
   report_fig$gsva <- 
     plot_grid(dge_gsva$hm_plot$plot + 
-                theme(legend.position = 'bottom')) %>% 
+                theme(legend.position = 'bottom', 
+                      axis.text.y = element_blank(), 
+                      axis.ticks = element_blank(), 
+                      axis.line = element_blank())) %>% 
     as_figure(label = 'figure_4_clusters_gsva', 
               ref_name = 'gsva', 
               caption = paste('Common reactome pathway gene signatures', 
@@ -171,7 +174,9 @@
               rel_widths = c(0.8, 0.2)) %>% 
     as_figure(label = 'figure_5_signaling', 
               ref_name = 'spia', 
-              caption = 'Common regulated signaling pathways in Collagen intermediate and Collagen high tumors.', 
+              caption = paste('Common regulated signaling pathways in', 
+                              'Collagen intermediate and Collagen', 
+                              'high tumors.'), 
               w = 180, 
               h = 150)
   
@@ -237,7 +242,8 @@
               axis = 'tblr') %>% 
     as_figure(label = 'figure_7_collagen_score_km', 
               ref_name = 'coll_score_km', 
-              caption = 'Prediction of prostate cancer survival by the Collagen Score.', 
+              caption = paste('Prediction of prostate cancer survival', 
+                              'by the Collagen Score.'), 
               w = 180, 
               h = 230)
   
@@ -247,7 +253,7 @@
   
   report_fig %>% 
     walk(pickle, 
-         path = './report/figures', 
+         path = './report/report figures', 
          format = 'pdf', 
          device = cairo_pdf)
   

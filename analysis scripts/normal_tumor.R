@@ -7,6 +7,12 @@
   
   norm_tumor <- list()
   
+# parallel backend -----
+  
+  insert_msg('Parallel backend')
+  
+  plan('multisession')
+  
 # globals ------
   
   insert_msg('Globals')
@@ -38,31 +44,52 @@
   norm_tumor$n_tags <- norm_tumor$n_numbers %>% 
     map(~paste('n =', .x))
   
+# descriptive stats ------
+  
+  insert_msg('Descriptive stats')
+  
+  norm_tumor$stats <- norm_tumor$analysis_tbl %>% 
+    future_map(~explore(.x, 
+                        split_factor = 'tissue', 
+                        variables = globals$genes_interest$gene_symbol, 
+                        what = 'table', 
+                        pub_styled = TRUE)) %>% 
+    map(reduce, left_join, by = 'variable') %>% 
+    map(set_names, c('variable', levels(norm_tumor$analysis_tbl[[1]]$tissue)))
+  
 # serial testing ------
   
   insert_msg('Serial testing')
   
   norm_tumor$test_results <- norm_tumor$analysis_tbl %>% 
-    map(test_two_groups, 
-        split_fct = 'tissue', 
-        variables = globals$genes_interest$gene_symbol,
-        type = 't', 
-        adj_method = 'BH', 
-        paired = TRUE) %>% 
-    map(mutate, 
-        estimate = expect_x, 
-        regulation = ifelse(significant == 'no', 
-                            'ns', 
-                            ifelse(estimate > 0, 
-                                   'upregulated', 
-                                   'downregulated')), 
-        regulation = factor(regulation, 
-                            c('upregulated', 'downregulated', 'ns')), 
-        plot_lab = ifelse(significant == 'yes', response, NA), 
-        plot_cap = ifelse(significant == 'yes', 
-                          paste('p =', signif(p_adjusted, 2)), 
-                          paste0('ns (p = ', signif(p_adjusted, 2), ')')))
-  
+    future_map(~compare_variables(.x, 
+                                  variables = globals$genes_interest$gene_symbol, 
+                                  split_factor = 'tissue', 
+                                  what = 'eff_size', 
+                                  types = 'paired_cohen_d', 
+                                  exact = FALSE, 
+                                  ci = FALSE, 
+                                  pub_styled = FALSE, 
+                                  adj_method = 'BH'), 
+               .options = furrr_options(seed = TRUE)) %>% 
+    map2(., names(.), 
+         ~mutate(.x,  
+                 significant = ifelse(p_adjusted < 0.05, 'yes', 'no'), 
+                 regulation = ifelse(significant == 'no', 
+                                     'ns', 
+                                     ifelse(estimate > 0, 
+                                            'upregulated', 
+                                            'downregulated')), 
+                 regulation = factor(regulation, 
+                                     c('upregulated', 'downregulated', 'ns')), 
+                 plot_lab = ifelse(significant == 'yes', variable, NA), 
+                 est_lab = paste(estimate_name, signif(abs(estimate), 2), sep = ' = '), 
+                 plot_cap = paste('n =', n/2), 
+                 plot_cap = paste(plot_cap, est_lab, significance, sep = ', '), 
+                 cohort = globals$study_labels[.y], 
+                 plot_title = paste0('<b><em>', variable, 
+                                     '</em>, ', cohort, '</b>')))
+
 # significantly regulated transcripts ------
   
   insert_msg('Significantly regulated transcripts')
@@ -72,13 +99,22 @@
   norm_tumor$significant <- norm_tumor$test_results %>% 
     map(filter, significant == 'yes') %>% 
     map(blast, regulation) %>% 
-    map(map, ~.x$response) %>% 
+    map(map, ~.x$variable) %>% 
     transpose
   
-  ## transcripts regulated in all cohorts
+  ## transcripts regulated in at least two cohorts
   
-  norm_tumor$common <- norm_tumor$significant %>% 
-    map(reduce, intersect)
+  norm_tumor$cmm_sets <- names(norm_tumor$test_results) %>% 
+    combn(m = 2, simplify = FALSE)
+  
+  for(i in names(norm_tumor$significant)) {
+    
+    norm_tumor$common[[i]] <- norm_tumor$cmm_sets %>% 
+      map(~norm_tumor$significant[[i]][.x]) %>% 
+      map(reduce, intersect) %>% 
+      reduce(union)
+    
+  }
   
 # volcano plots -------
   
@@ -109,7 +145,7 @@
            theme(plot.tag = element_blank()) + 
            labs(title = y, 
                 subtitle = z, 
-                x = expression('log'[2] * ' fold regulation, tumor vs benign'), 
+                x = expression("Effect size, cohen's d"), 
                 y = expression('-log'[10] * 'pFDR')))
   
 # Venn plots for the common up- and downregulated genes -----
@@ -135,22 +171,18 @@
   for(i in names(norm_tumor$analysis_tbl)) {
     
     norm_tumor$plots[[i]] <- 
-      list(variable = globals$genes_interest$gene_symbol, 
-           plot_subtitle = paste(norm_tumor$n_tags, 
-                                 norm_tumor$test_results[[i]]$plot_cap, 
-                                 sep = ', '), 
-           plot_title = paste0('<b><em>', 
-                               globals$genes_interest$gene_symbol, 
-                               '</em>, ', globals$study_labels[[i]], '</b>')) %>% 
+      list(variable = norm_tumor$test_results[[i]]$variable, 
+           plot_subtitle = norm_tumor$test_results[[i]]$plot_cap, 
+           plot_title = norm_tumor$test_results[[i]]$plot_title) %>% 
       pmap(plot_variable, 
            norm_tumor$analysis_tbl[[i]], 
            split_factor = 'tissue', 
            type = 'paired', 
-           y_lab = expression('log'[2] * 'expression'), 
+           y_lab = expression('log'[2] * ' expression'), 
            cust_theme = globals$common_theme) %>% 
       map(~.x + 
             scale_fill_manual(values = c(tumor = 'coral3', 
-                                         benign = 'darkolivegreen3'), 
+                                         benign = 'darkolivegreen4'), 
                               labels = c(tumor = 'Tumor', 
                                          benign = 'Benign'), 
                               name = '') +
@@ -162,7 +194,75 @@
     
   }
 
+# Ribbon plots, common genes ------
+  
+  insert_msg('Ribbon plots, common genes')
+  
+  ## variables and plotting order determined by the effect size metric
+  
+  norm_tumor$ribbon_plots$variables <- norm_tumor$common %>% 
+    reduce(union)
+  
+  norm_tumor$ribbon_plots$plot_order <- norm_tumor$test_results %>% 
+    map(filter, variable %in% norm_tumor$ribbon_plots$variables) %>% 
+    map(select, variable, estimate) %>% 
+    compress(names_to = 'cohort') %>% 
+    summarise(estimate = mean(estimate), .by = variable) %>% 
+    arrange(estimate)
+  
+  ## axis labels: bold if significant
+  
+  norm_tumor$ribbon_plots$ax_labs <- norm_tumor$test_results %>% 
+    map(filter, variable %in% norm_tumor$ribbon_plots$variables) %>% 
+    map(mutate, 
+        ax_lab = paste0('<em>', variable, '</em>'), 
+        significance = ifelse(stri_detect(significance, fixed = 'ns'), 
+                              'ns', significance), 
+        ax_lab = paste0(ax_lab, '<br>', est_lab, ', ', significance), 
+        ax_lab = ifelse(significant == 'yes', 
+                        paste0('<b>', ax_lab, '</b>'), 
+                        ax_lab)) %>% 
+    map(~set_names(.x$ax_lab, .x$variable))
+  
+  ## plotting data/Z-scores and plots
+  
+  norm_tumor$ribbon_plots$data <- norm_tumor$analysis_tbl %>% 
+    map(select, tissue, all_of(norm_tumor$ribbon_plots$variables)) %>% 
+    map(map_dfc, function(x) if(is.numeric(x)) scale(x)[, 1] else x)
+  
+  norm_tumor$ribbon_plots$plots <- 
+    list(data = norm_tumor$ribbon_plots$data, 
+         plot_title = globals$study_labels[names(norm_tumor$ribbon_plots$data)], 
+         plot_subtitle = paste('n =', 
+                               map_dbl(norm_tumor$ribbon_plots$data, ~nrow(.x)/2))) %>% 
+    pmap(draw_stat_panel, 
+         variables = norm_tumor$ribbon_plots$variables, 
+         split_factor = 'tissue', 
+         stat = 'mean', 
+         err_stat = '2se', 
+         form = 'line', 
+         cust_theme = globals$common_theme, 
+         x_lab = 'Mean Z-score \u00B1 2 \u00D7 SEM') %>% 
+    map2(., norm_tumor$ribbon_plots$ax_labs,
+         ~.x + 
+           scale_y_discrete(limits = norm_tumor$ribbon_plots$plot_order$variable, 
+                            labels = .y) + 
+           scale_fill_manual(values = c(tumor = 'coral3', 
+                                        benign = 'darkolivegreen4'), 
+                             labels = c(tumor = 'Tumor', 
+                                        benign = 'Benign'), 
+                             name = '') + 
+           scale_color_manual(values = c(tumor = 'coral3', 
+                                         benign = 'darkolivegreen4'), 
+                              labels = c(tumor = 'Tumor', 
+                                         benign = 'Benign'), 
+                              name = '') + 
+           theme(axis.title.y = element_blank(), 
+                 axis.text.y = element_markdown()))
+  
 # END ------
+  
+  plan('sequential')
   
   rm(i)
   

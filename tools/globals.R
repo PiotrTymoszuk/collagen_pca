@@ -91,9 +91,9 @@
                                       face = 'plain', 
                                       color = 'black')
   
-  globals$common_margin <- ggplot2::margin(t = 5, 
-                                           l = 5, 
-                                           r = 5, 
+  globals$common_margin <- ggplot2::margin(t = 3, 
+                                           l = 3, 
+                                           r = 3, 
                                            unit = 'mm')
   
   globals$common_theme <- theme_classic() + 

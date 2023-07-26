@@ -33,10 +33,26 @@
   
   insert_msg('Paper scripts')
   
+  ## files for the analysis report
+  
   c('./report scripts/links.R', 
     './report scripts/report_tables.R', 
     './report scripts/report_figures.R', 
     './report scripts/report_supplement.R') %>% 
+    source_all(message = TRUE, crash = TRUE) %>% 
+    print
+  
+  ## files for the manuscript
+  
+  c('./report scripts/links.R', 
+    './report scripts/paper_tables.R', 
+    './report scripts/paper_figures.R') %>% 
+    source_all(message = TRUE, crash = TRUE) %>% 
+    print
+  
+  ## rendering the analysis report and parts of the manuscript
+  
+  c('./report scripts/render.R') %>% 
     source_all(message = TRUE, crash = TRUE)
   
 # END -----

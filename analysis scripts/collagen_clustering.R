@@ -164,14 +164,17 @@
              color = 'black') + 
     geom_label(aes(label = signif(percent, 2), 
                    y = y_pos), 
-               size = 2.75, 
+               size = 2.5, 
                show.legend = FALSE) + 
     scale_x_discrete(labels = coll_clust$cohort_caps) + 
     scale_fill_manual(values = globals$cluster_colors, 
+                      labels = c('Collagen hi' = 'hi', 
+                                 'Collagen int' = 'int', 
+                                 'Collagen low' = 'low'), 
                       name = '') + 
     globals$common_theme + 
     theme(axis.title.x = element_blank()) + 
-    labs(title = 'Distribution of the Collagen Clusters', 
+    labs(title = 'Collagen cluster distribution', 
          y = '% of cohort')
   
 # Diagnostic plots for the clustering structures ------
@@ -286,10 +289,11 @@
                                   what = 'eff_size', 
                                   types = 'etasq', 
                                   ci = FALSE, 
-                                  pub_styled = TRUE, 
+                                  pub_styled = FALSE, 
                                   adj_method = 'BH'), 
                .options = furrr_options(seed = TRUE)) %>% 
     map(mutate, 
+        eff_size = paste('\u03B7\u00B2 =', signif(estimate, 2)), 
         plot_cap = paste(eff_size, significance, sep = ', '), 
         plot_lab = ifelse(p_adjusted < 0.05, 
                           paste0('<b><em>', variable, '</em></b>'), 
@@ -299,7 +303,8 @@
   
   coll_clust$result_tbl <- 
     map2(coll_clust$stats, 
-         map(coll_clust$test, ~.x[c('variable', 'significance', 'eff_size')]), 
+         map(coll_clust$test, 
+             ~.x[c('variable', 'significance', 'eff_size')]), 
          left_join, by = 'variable') %>% 
     map(format_summ_tbl) %>% 
     map2(., 
@@ -355,14 +360,14 @@
                                   what = 'eff_size', 
                                   types = 'cohen_d', 
                                   ci = FALSE, 
-                                  pub_styled = TRUE, 
+                                  pub_styled = FALSE, 
                                   adj_method = 'BH'), 
                .options = furrr_options(seed = TRUE))
   
   ## Heat map limits
   
   coll_clust$hm_limits <- coll_clust$two_test %>% 
-    map(arrange, eff_size) %>% 
+    map(arrange, estimate) %>% 
     map(~.$variable)
 
 # Heat maps of the clustering features ------
@@ -464,6 +469,77 @@
           facet_grid(gene_group ~ ., 
                      scales = 'free', 
                      space = 'free'))
+
+# Heat map of normalized means ------
+  
+  insert_msg('Heat map of normalized means')
+  
+  ## variables and the plotting order
+  
+  coll_clust$mean_hm$plot_order <- coll_clust$two_test %>% 
+    map(select, variable, estimate) %>% 
+    compress(names_to = 'cohort') %>% 
+    summarise(estimate = mean(estimate), .by = variable) %>% 
+    arrange(estimate)
+  
+  ## data: mean normalized expression per clusters in the cohorts
+  
+  coll_clust$mean_hm$data <- coll_clust$analysis_tbl %>% 
+    map(select, -patient_id) %>% 
+    map(blast, clust_id) %>% 
+    map(map, select, -clust_id) %>% 
+    map(map, colMeans) %>% 
+    map(map, 
+        compress, 
+        names_to = 'variable', 
+        values_to = 'mean_exp') %>% 
+    map(compress, 
+        names_to = 'clust_id') %>% 
+    compress(names_to = 'cohort') %>% 
+    mutate(clust_id = as.character(clust_id), 
+           clust_id = stri_extract(clust_id, regex = 'low|int|hi'), 
+           clust_id = factor(clust_id, c('low', 'int', 'hi')))
+  
+  ## plotting data: appending with the plotting order and gene classification
+  
+  coll_clust$mean_hm$data <- 
+    left_join(coll_clust$mean_hm$data, 
+              coll_clust$mean_hm$plot_order, 
+              by = 'variable') %>% 
+    left_join(globals$genes_interest[c('gene_symbol', 'gene_group')] %>% 
+                set_names(c('variable', 'gene_group')), 
+              by = 'variable') %>% 
+    mutate(gene_group = stri_replace(gene_group, 
+                                     fixed = ' ', 
+                                     replacement = '\n'))
+    
+  
+  ## heat map plot
+  
+  coll_clust$mean_hm$plot <- coll_clust$mean_hm$data %>% 
+    ggplot(aes(x = cohort, 
+               y = reorder(variable, estimate), 
+               fill = mean_exp)) + 
+    geom_tile() + 
+    facet_grid(gene_group ~ clust_id, 
+               scales = 'free', 
+               space = 'free') + 
+    scale_fill_gradient2(low = 'steelblue', 
+                         mid = 'black', 
+                         high = 'firebrick', 
+                         midpoint = 0, 
+                         limits = c(-1.5, 1.5), 
+                         name = 'Mean Z-score', 
+                         oob = scales::squish) + 
+    scale_x_discrete(labels = globals$study_labels) + 
+    globals$common_theme + 
+    theme(axis.title = element_blank(),
+          axis.text.x = element_text(hjust = 1, 
+                                     vjust = 0.5, 
+                                     angle = 90), 
+          axis.text.y = element_text(face = 'italic')) + 
+    labs(title = 'Collagen clusters of prostate cancers', 
+         subtitle = 'Mean collagen pathway gene expression levels')
 
 # END ------
   

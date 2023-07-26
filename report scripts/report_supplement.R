@@ -218,8 +218,8 @@
            labs(title = .y) + 
            theme(legend.position = 'none', 
                  plot.title.position = 'panel', 
-                 axis.text = element_markdown(size = 7))) %>% 
-    c(list(legend = get_legend(clust_infil$box_panels$mcp[[1]]))) %>% 
+                 axis.text = element_markdown(size = 6))) %>% 
+    c(list(legend = get_legend(clust_infil$ribbon_panels$mcp[[1]]))) %>% 
     plot_grid(plotlist = ., 
               ncol = 2, 
               align = 'hv', 
@@ -736,7 +736,7 @@
   
   suppl_report_fig %>% 
     walk(pickle, 
-         path = './report/supplementary figures', 
+         path = './report/report supplementary figures', 
          format = 'pdf', 
          device = cairo_pdf)
   

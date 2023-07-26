@@ -376,6 +376,35 @@
     
   }
   
+  biol_labeller <- function(x) {
+    
+    x <- stri_replace_all(x, fixed = '\n', replacement = ' ')
+    
+    repl <- c('ECM-receptor interaction' = 'ECM', 
+              'Small cell lung cancer' = 'SCLC', 
+              'Staphylococcus aureus' = 'S. aureus', 
+              'Systemic lupus erythematosus' = 'SLE', 
+              'Fatty acid oxidation' = 'FAOX', 
+              'isoleucine' = 'Ile', 
+              'Valine' = 'Val', 
+              'leucine' = 'Leu', 
+              'and ' = '', 
+              'metabolism' = '\nmetabolism', 
+              'interconversion' = '\ninterconversion', 
+              'Transport, extracellular' = 'Extracellular\ntransport', 
+              'adhesion' = '\nadhesion', 
+              'Regulation of actin cytoskeleton' = 'ACT\ncytoskeleton')
+    
+    for(i in names(repl)) {
+      
+      x <- stri_replace_all(x, fixed = i, replacement = repl[[i]])
+      
+    }
+    
+    space2break(x, 2)
+    
+  }
+  
 # Result formatting --------
   
   format_summ_tbl <- function(data, 
@@ -752,6 +781,19 @@
     }
     
     flextable_object
+    
+  }
+  
+  my_word <- function(...) {
+    
+    form <- word_document2(number_sections = FALSE, 
+                           reference_docx = 'ms_template.docx')
+    
+    form$pandoc$lua_filters <- c(form$pandoc$lua_filters, 
+                                 'scholarly-metadata.lua', 
+                                 'author-info-blocks.lua')
+    
+    form
     
   }
   

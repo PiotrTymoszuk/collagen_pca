@@ -52,15 +52,7 @@
   infil$xcell <- list(gene_expression = infil$analysis_tbl,
                       arrays = c(TRUE, TRUE, TRUE, TRUE, FALSE)) %>%
     future_pmap(safely(deconvolute),
-                method = 'xcell', 
-                expected_cell_types = c('Monocyte', 
-                                        'Macrophage M1', 
-                                        'Macrophage M2', 
-                                        'Cancer associated fibroblast', 
-                                        'Endothelial cell', 
-                                        'NK cell', 
-                                        'T cell', 
-                                        'Neutrophil')) %>% 
+                method = 'xcell') %>% 
     map(~.x$result) %>% 
     compact
   
@@ -84,5 +76,7 @@
   save(infil, file = './data/infiltration.RData')
   
 # END -----
+  
+  plan('sequential')
   
   insert_tail()

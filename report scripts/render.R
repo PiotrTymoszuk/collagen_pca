@@ -10,33 +10,29 @@
   
 # supplementary material, analysis report ------
   
-  insert_msg('Rendering the supplements for the analysis report')
+  insert_msg('Rendering the analysis report')
   
-  render('./report/markdown/report_supplement.Rmd', 
+  ## pending, I'll include the new figures and tables
+  
+ # render('./report/markdown/report_supplement.Rmd', 
+  #       output_format = word_document2(number_sections = FALSE, 
+   #                                     reference_docx = 'ms_template.docx'), 
+    #     output_dir = './report')
+  
+#  render('./report/markdown/report.Rmd', 
+ #        output_format = my_word(), 
+  #       output_dir = './report')
+
+# analysis report -----
+  
+  insert_msg('Rendering manuscript parts')
+  
+  render('./report/markdown/manuscript_figures_tables.Rmd', 
          output_format = word_document2(number_sections = FALSE, 
                                         reference_docx = 'ms_template.docx'), 
          output_dir = './report')
   
-# analysis report -----
-  
-  insert_msg('Rendering the analysis report')
-  
-  my_word <- function(...) {
-    
-    form <- word_document2(number_sections = FALSE, 
-                           reference_docx = 'ms_template.docx')
-    
-    form$pandoc$lua_filters <- c(form$pandoc$lua_filters, 
-                                 'scholarly-metadata.lua', 
-                                 'author-info-blocks.lua')
-    
-    form
-    
-  }
-  
-  render('./report/markdown/report.Rmd', 
-         output_format = my_word(), 
-         output_dir = './report')
+
   
 # END -----
   

@@ -64,8 +64,8 @@
   }
   
   ## formatting the results
-  ## significant effect is defined as eta^2 >= 0.14
-  ## (large effect)
+  ## significant effect is defined as eta^2 >= 0.06
+  ## (moderate effect)
   
   dge_gsva$eff_size <- dge_gsva$eff_size %>% 
     map(set_names, dge_gsva$lexicon$variable) %>% 
@@ -73,7 +73,7 @@
         names_to = 'response', 
         values_to = 'eta_sq') %>% 
     map(mutate, 
-        significant = ifelse(eta_sq >= 0.14, 'yes', 'no'))
+        significant = ifelse(eta_sq >= 0.06, 'yes', 'no'))
   
 # Significance in ANOVA ------
   
@@ -157,14 +157,24 @@
         values_to = 'mean_score') %>% 
     map(compress, names_to = 'clust_id') %>% 
     compress(names_to = 'cohort') %>% 
-    mutate(clust_id = factor(clust_id, 
-                             levels(dge_gsva$assignment[[1]]$clust_id)))
+    mutate(clust_id = stri_extract(as.character(clust_id), 
+                                   regex = ('hi|int|low')), 
+           clust_id = factor(clust_id, c('low', 'int', 'hi')))
   
   ## appending with the signature classification
   
   dge_gsva$hm_plot$sign_classes <- 
     read_tsv('./data/reactome_classification.tsv') %>% 
-    mutate(class = stri_replace_all(class, fixed = '/', replacement = '\n'))
+    mutate(class = stri_replace_all(class, fixed = '/', replacement = '\n'), 
+           class = stri_replace_all(class, fixed = ' ', replacement = '\n'), 
+           class = factor(class, 
+                          c('ECM\ncollagen', 
+                            'adhesion\nmotility\nscavenging', 
+                            'angiogenesis\ndevelopment\nhemostasis', 
+                            'GF\nsignaling',
+                            'immune\nsignaling', 
+                            'other\nsignaling', 
+                            'metabolism\ntransport\ntranslation')))
   
   dge_gsva$hm_plot$data <- 
     left_join(dge_gsva$hm_plot$data, 
@@ -195,7 +205,7 @@
                                      angle = 90), 
           axis.title = element_blank()) + 
     labs(title = 'GSVA, Reactome pathway signatures', 
-         subtitle = 'Regulated in at least four cohorts, \u03B7\u00B2 \u2265 0.14', 
+         subtitle = 'Regulated in at least four cohorts, \u03B7\u00B2 \u2265 0.06', 
          fill = 'mean ssGSEA')
 
 # END ------

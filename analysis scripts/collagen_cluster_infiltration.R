@@ -20,8 +20,7 @@
   ## infiltration variables, skipping the cytotoxicity score
   
   clust_infil$variables[c('xcell', 'mcp')] <- 
-    infil[c("xcell_types", "mcp_counter_types")] %>% 
-    map(~.x[!.x %in% c('cytotoxicity score')])
+    infil[c("xcell_types", "mcp_counter_types")]
   
   ## analysis tables
   

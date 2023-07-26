@@ -51,6 +51,7 @@
   ## characteristic of the cohorts and collagen-associated genes
   
   c('./analysis scripts/cohorts.R', ## descriptive characteristic of the study cohorts
+    './analysis scripts/mri.R', ## diffusion capacity in MRI
     './analysis scripts/normal_tumor.R', ## expression of collagen genes in the tumor and normal prostate
     './analysis scripts/correlation.R') %>%  ## pairwise correlation of collagen pathway gene expression
     source_all(message = TRUE, crash = TRUE) %>% 

@@ -123,6 +123,7 @@
              ~.x[c('variable', 'significance', 'eff_size')]), 
          left_join, by = 'variable') %>% 
     map(format_summ_tbl, 
+        rm_n = FALSE, 
         rm_complete = FALSE) %>% 
     map(mutate, 
         variable = exchange(variable, 
@@ -155,7 +156,8 @@
            scale = 'percent', 
            x_lab = 'Collagen Cluster', 
            cust_theme = globals$common_theme, 
-           x_n_labs = TRUE) %>% 
+           x_n_labs = TRUE, 
+           txt_size = 2.5) %>% 
       set_names(cs_cluster$var_list[[i]])
     
     ## styling of the numeric variable plots

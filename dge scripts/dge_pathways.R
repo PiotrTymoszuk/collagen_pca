@@ -147,8 +147,8 @@
            geom_text(aes(label = signif(tA, 2),
                          alpha = significant, 
                          fontface = fontface, 
-                         x = as.numeric(cohort) + 0.25), 
-                     size = 2.75, 
+                         x = as.numeric(cohort) + 0.2), 
+                     size = 2.5, 
                      hjust = 0, 
                      vjust = 0.5) + 
            scale_fill_gradient(low = 'white', 
