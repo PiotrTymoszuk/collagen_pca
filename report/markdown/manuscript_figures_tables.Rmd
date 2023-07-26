@@ -1,0 +1,138 @@
+---
+title: "Prognostic and biologic relevance of collagen biosynthesis pathway in prostate cancer"
+subtitle: "Bioinformatic methods, figures and tables"
+date: "`r format(Sys.time(), '%Y-%m-%d')`"
+
+output: 
+  bookdown::word_document2:   
+    reference_docx: ms_template.docx
+
+bibliography: coll_biblio.bib
+
+csl: frontiers-in-immunology.csl
+
+header-includes:
+  \usepackage{longtable}
+  \usepackage{tabu}
+  \usepackage{caption}
+  \usepackage{makecell}
+  \usepackage{pdflscape}
+  \usepackage{array}
+  \usepackage{booktabs}
+  \usepackage{threeparttable}
+  \usepackage{threeparttablex}
+  \usepackage{wrapfig}
+  \usepackage{multirow}
+  \usepackage[normalem]{ulem}
+  \usepackage{colortbl}
+  \usepackage{xcolor}
+  \usepackage{float} \floatplacement{figure}{H} \floatplacement{table}{H}
+  \newcommand{\beginsupplement}{\setcounter{table}{0}  \renewcommand{\thetable}{S\arabic{table}}       \setcounter{figure}{0} \renewcommand{\thefigure}{S\arabic{figure}}}
+---
+
+```{r, setup, include = FALSE}
+
+library(bookdown)
+library(flextable)
+
+knitr::opts_chunk$set(echo = FALSE, 
+                      warning = FALSE, 
+                      message = FALSE, 
+                      dev = "png", 
+                      dpi = 600, 
+                      tab.cap.pre = 'Table ', 
+                      tab.cap.sep = " ", 
+                      tab.cap.style = 'Table Heading')
+
+set_flextable_defaults(font.family = 'Cambria', font.size = 10)
+
+
+```
+
+\newpage
+
+# Tables 
+
+```{r tab-cohorts, tab.cap = 'Characteristic of the analyzed cohorts. Numeric variables are presented as medians with interquartile ranges (IQR) and ranges. Qualitative variables are presented as percentages of categories within the complete observation set.'}
+
+flextable::flextable(paper_tbl$cohorts) %>% 
+  set_widths(c(3, rep(3.5, 5))) %>% 
+  merge_v(1) %>% 
+  footnote(1, 1, 
+           value = as_paragraph('PSA: prostate-specific antigen.'), 
+           part = 'header', 
+           ref_symbols = 'a') %>%
+  theme_vanilla
+
+```
+
+\newpage
+
+```{r tab-genes, tab.cap = 'Collagen genes of interest and their classification.'}
+
+flextable::flextable(paper_tbl$genes) %>% 
+  set_widths(rep(4, 3)) %>% 
+  italic(j = 1, part = 'body') %>% 
+  footnote(1, 3, 
+           value = as_paragraph('ECM: extracellular matrix.'), 
+           part = 'header', 
+           ref_symbols = 'a') %>% 
+  theme_vanilla
+
+```
+
+\newpage
+
+# Figures
+
+```{r fig-norm-tumor, fig.width = figur::convert(paper_fig$norm_tumor, to = 'in')$w, fig.height = figur::convert(paper_fig$norm_tumor, to = 'in')$h, fig.cap = 'Differences in tissue diffusion capacity and expression of the collagen pathway genes between the prostate cancer and benign tissue.'}
+
+paper_fig$norm_tumor$plot
+
+```
+
+__Figure \@ref(fig:fig-norm-tumor). Differences in tissue diffusion capacity and expression of the collagen pathway genes between the prostate cancer and benign tissue.__ 
+
+_(A) Representative MRI axial sequences of the prostate of an 83-year-old patient with prostate cancer (left panel). The T2-weighted images (a) show a 23mm suspicious hypo-intense lesion in the left peripheral zone (red star) of the prostate, which has an early enhancement in the contrast-enhanced T1-weighted image (b). The DWI scan (c) and ADC map (d) show a strong diffusion restriction (black and white character) of the tumor area suggesting a PI-RADS 5 lesion. Statistical significance for differences in diffusion capacity in patient-matched tumor and benign tissue measured by ADC was determined by paired T test with Cohen's d effect size statistic (right panel). Single ADC values are visualized as points, grey lines connect measurements of the same donors. The number of measurement pairs, effect size and p value are displayed in the plot caption._
+
+_(B) Differences in $log_2$-transformed expression levels of `r nrow(globals$genes_interest)` genes related to collagen metabolism between donor-matched tumor and benign prostate tissue were investigated by paired T test with Cohen's d effect size statistic in three published cohorts. P values were corrected for multiple testing with the false discovery method. Results for gene significantly regulated in at least two cohorts are presented. Lines represent means, 2 $\times$ SEM (standard error of the mean) intervals are visualized as tinted ribbons. Gene symbols, effect sizes and p values are shown in the Y axes. Significant effects are highlighted in bold. Numbers of tissue pairs are displayed in the plot captions._
+
+\newpage
+
+```{r fig-coll-clusters, fig.width = figur::convert(paper_fig$coll_clusters, to = 'in')$w, fig.height = figur::convert(paper_fig$coll_clusters, to = 'in')$h, fig.cap = 'Collagen clusters of prostate carcinoma and their clinical characteristic.'}
+
+paper_fig$coll_clusters$plot
+
+```
+
+__Figure \@ref(fig:fig-coll-clusters). Collagen clusters of prostate carcinoma and their clinical characteristic.__ 
+
+_Prostate cancers in the training TCGA cohort were clustered in respect to normalized $log_2$-transformed expression levels of the collagen pathway genes of interest by the PAM algorithm with Manhattan distance between the observations. Three clusters, collagen^low^ (low), collagen^intermediate^ (int) and collagen^high^ (hi) were defined. Cancer samples from the test cohorts (`r globals$study_labels[globals$study_labels != 'TCGA'] %>% paste(collapse = ', ')`) were assigned to the collagen clusters with an inverse distance weighted k-nearest neighbor classifier._
+
+_(A) Mean normalized $log_2$-transformed expression levels of the collagen pathway genes in the collagen clusters and cohorts presented in a heat map._
+
+_(B) Distribution of the collagen clusters expressed as percentage of the cohort cancer samples visualized in a stack plot. Total numbers of cancer samples are displayed in the X axis. _
+
+_(C, D) Distribution of Gleason scores (GS, C) and pathological tumor stages (pT, D) in the collagen clusters. Statistical significance was determined by $\chi^2$ test with Cramer's V effect size statistic. P values were corrected for multiple testing with the false discovery rate method. Gleason score and tumor stage distributions are shown in stack plots. Effect sizes and p values are displayed in the plot captions. Numbers of observations in the clusters are indicated in the X axes._
+
+\newpage
+
+```{r fig-cluster-biology, fig.width = figur::convert(paper_fig$cluster_biology, to = 'in')$w, fig.height = figur::convert(paper_fig$cluster_biology, to = 'in')$h, fig.cap = 'Infiltration, biological processes, signaling and metabolic pathways differentially regulated in the collagen clusters.'}
+
+paper_fig$cluster_biology$plot
+
+```
+
+__Figure \@ref(fig:fig-cluster-biology). Infiltration, biological processes, signaling and metabolic pathways differentially regulated in the collagen clusters.__ 
+
+_(A) Counts of cancer-associated fibroblasts (CAF) and endothelial cells (EC) estimated by the MCP counter algorithm were found to differ significantly between the collagen clusters in all investigated collectives. Statistical significance was assessed by Kruskal-Wallis test with $\eta^2$ effect size statistic. P values were corrected for multiple comparison with the false discovery rate method. Counts of fibroblasts and endothelial cells in the collagen clusters in the TCGA cohort are shown in violin plots. Red diamonds with whiskers represented medians with interquartile ranges. Single tumor samples are visualized as points. Effect sizes and p values are displayed in the plot captions. Numbers of observations in the clusters are indicated in the X axes._
+
+_(B) Gene set variation analysis (GSVA) with Reactome pathway gene signatures. Statistical significance for differences in signature single sample gene set enrichment analysis scores (ssGSEA) between the collagen clusters was determined by one-way ANOVA with $\eta^2$ effect size statistic. P values were corrected for multiple testing with the false discovery rate method. Mean ssGSEA scores in the clusters and cohorts for signatures significantly regulated in at least four cohorts are presented in a heat map. Full analysis results are presented in Supplementary Table S6._
+
+_(C) Modulation of KEGG-listed signaling pathways in the collagen^high^ (hi) or collagen^intermediate^ (hi) as compared with collagen^low^ tumors was predicted by the SPIA algorithm based on differential gene expression estimates. Predicted magnitude of pathway modulation (tA parameter) for pathways significantly modulated in at least four cohorts was visualized in bubble plots (tA < 0: inhibition, blue; tA > 0, activation, red). Points are labeled with their tA values. Significant effects are highlighted in bold. Full analysis results are presented in Supplementary Table S8._
+
+_(D) Modulation of Recon2 model metabolic reactions in the collagen^high^ (hi) or collagen^intermediate^ (hi) as compared with collagen^low^ tumors was predicted by the BiGGR and biggrExtra algorithms based on differential gene expression estimates. Enrichment of significantly activated and significantly inhibited reactions in the collagen^high^ or collagen^intermediate^ clusters within the Recon model metabolic subsystems was investigated by Fisher's exact test. Enrichment p values were corrected for multiple testing with the false discovery rate method. Enrichment odds ratios for activated (red) and inhibited reaction (blue) for significantly enriched metabolic subsystems shared by at least four cohorts are presented in bubble plots. Points are labeled with their odds ration values. Full analysis results are presented in Supplementary Table S10._
+
+\newpage
+
+# References
