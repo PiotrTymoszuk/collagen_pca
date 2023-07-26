@@ -7,19 +7,23 @@ To see the analysis report, please follow the links:
 
 * _analysis report_: still pending
 
-* [analysis report figures](https://github.com/PiotrTymoszuk/collagen_pca/tree/main/report/figures)
+* PDF files with [analysis report figures](https://github.com/PiotrTymoszuk/collagen_pca/tree/main/report/figures)
 
-* [analysis report supplementary figures](https://github.com/PiotrTymoszuk/collagen_pca/tree/main/report/supplementary%20figures)
+* PDF files with [analysis report supplementary figures](https://github.com/PiotrTymoszuk/collagen_pca/tree/main/report/supplementary%20figures)
+
+* an Excel file with [analysis report supplementary tables](https://github.com/PiotrTymoszuk/collagen_pca/blob/main/report/manuscript_supplementary_tables.xlsx)
 
 To access manuscript files, please use the following links:
 
-* a Word file with _main manuscript tables, figures and parts of methods_
+* a Word file with [main manuscript tables, figures and parts of methods](https://github.com/PiotrTymoszuk/collagen_pca/blob/main/report/report_supplementary_tables.xlsx)
 
-* a Word file with _manuscript supplementary material_
+* a Word file with _manuscript supplementary material_: still pending
 
-* PDF files with the _main manuscript figures_
+* PDF files with [main manuscript figures](https://github.com/PiotrTymoszuk/collagen_pca/tree/main/report/manuscript%20figures)
 
-* PDF files with the _supplementary manuscript figures_
+* PDF files with _supplementary manuscript figures_: still pending
+
+* an Excel file with [manuscript supplementary tables](https://github.com/PiotrTymoszuk/collagen_pca/blob/main/report/manuscript_supplementary_tables.xlsx)
 
 ## Terms of use
 Publicly available data sets were analyzed. 
