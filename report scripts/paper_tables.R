@@ -78,6 +78,12 @@
   suppl_paper_tbl$cluster <- coll_clust$result_tbl %>% 
     compress(names_to = 'cohort') %>% 
     mutate(cohort = globals$study_labels[cohort]) %>% 
+    select(cohort, variable, 
+           `Collagen low`, `Collagen int`, `Collagen hi`, 
+           significance, eff_size) %>% 
+    set_names(c('Cohort', 'Variable', 
+                'Collagen low', 'collagen intermediate', 'Collagen high', 
+                'Significance', 'Effect size')) %>% 
     mdtable(label = 'table_s2_cluster_collagen_genes', 
             ref_name = 'cluster', 
             caption = paste("Expression of the cluster-defining", 
@@ -101,6 +107,10 @@
     compress(names_to = 'cohort') %>% 
     mutate(cohort = globals$study_labels[cohort]) %>% 
     filter(variable != 'Collagen Score') %>% 
+    select(cohort, variable, low, int, hi, significance, eff_size) %>% 
+    set_names(c('Cohort', 'Variable', 
+                'Collagen low', 'Collagen intermediate', 'Collagen high', 
+                'Significance', 'Effect size')) %>% 
     mdtable(label = 'table_s3_cluster_clinical_characteristic', 
             ref_name = 'clinic',
             caption = paste('Clinical characteristic of the collagen clusters.', 
@@ -202,8 +212,8 @@
                             "modeling.", 
                             "Results for signatures significantly regulated",
                             "with moderate-to-large effect size", 
-                            "(eta-squared at leat 0.06) in at least four', 
-                            'cohorts are presented.", 
+                            "(eta-squared at leat 0.06) in at least four", 
+                            "cohorts are presented.", 
                             "P values were corrected for multiple testing with",
                             "the false discovery rate method (FDR).", 
                             "The table is available as a supplementary", 

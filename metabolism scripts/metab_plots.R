@@ -131,6 +131,44 @@
     
   }
 
+# Reaction numbers ------
+  
+  insert_msg('Reaction numbers')
+  
+  ## data
+  
+  meta_plots$counts$data <- meta$models %>% 
+    map(map, count) %>% 
+    map(map, 
+        filter, 
+        subsystem == 'All reactions', 
+        status %in% c('activated', 'inhibited')) %>% 
+    map(compress, names_to = 'cohort') %>% 
+    map(mutate, 
+        percent = n/n_total * 100)
+  
+  ## plots
+  
+  meta_plots$counts$plots <- meta_plots$counts$data %>% 
+    map2(., c('Collagen int vs low', 'Collagen hi vs low'), 
+         ~.x %>% 
+           ggplot(aes(x = percent, 
+                      y = cohort, 
+                      fill = status)) + 
+           geom_bar(stat = 'identity', 
+                    color = 'black', 
+                    position = position_dodge(0.9)) +
+           scale_fill_manual(values = c(activated = 'firebrick', 
+                                        inhibited = 'steelblue'), 
+                             name = '') + 
+           scale_y_discrete(labels = globals$study_labels) + 
+           globals$common_theme + 
+           theme(axis.title.y = element_blank()) + 
+           labs(title = .y, 
+                subtitle = paste('total reactions: n =', 
+                                 meta_plots$counts$data[[1]]$n_total[[1]]), 
+                x = '% of reactions'))
+  
 # END ------
 
   rm(i)

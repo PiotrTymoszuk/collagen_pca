@@ -46,7 +46,8 @@
   
   c('./report scripts/links.R', 
     './report scripts/paper_tables.R', 
-    './report scripts/paper_figures.R') %>% 
+    './report scripts/paper_figures.R', 
+    './report scripts/paper_supplement.R') %>% 
     source_all(message = TRUE, crash = TRUE) %>% 
     print
   

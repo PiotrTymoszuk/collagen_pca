@@ -12,7 +12,7 @@
   insert_msg('Globals setup')
   
   ## analysis tables
-  ## Gleason is coded as up to 7 versus 8+
+  ## Gleason is coded as up to 5-6, 7 versus 8+
   
   surv_multi$analysis_tbl <- coll_score$score_tbl %>% 
     map(select, 
@@ -30,8 +30,8 @@
     map(format_clinical) %>% 
     map(mutate, 
         gleason_factor = cut(gleason, 
-                             c(-Inf, 7, Inf), 
-                             c('6 - 7', '8+'))) %>% 
+                             c(-Inf, 6, 7, Inf), 
+                             c('5 - 6', '7', '8+'))) %>% 
     map2(surv_multi$analysis_tbl, ., 
          left_join, 
          by = 'patient_id') %>% 

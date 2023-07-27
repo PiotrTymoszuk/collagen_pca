@@ -52,7 +52,18 @@
   infil$xcell <- list(gene_expression = infil$analysis_tbl,
                       arrays = c(TRUE, TRUE, TRUE, TRUE, FALSE)) %>%
     future_pmap(safely(deconvolute),
-                method = 'xcell') %>% 
+                method = 'xcell',
+                expected_cell_types = c('B cell', 
+                                        'T cell CD8+', 
+                                        'T cell CD4+ (non-regulatory)', 
+                                        'T cell regulatory (Tregs)', 
+                                        'Myeloid dendritic cell', 
+                                        'Macrophage', 
+                                        'Monocyte', 
+                                        'Neutrophil', 
+                                        'NK cell', 
+                                        'Cancer associated fibroblast', 
+                                        'Endothelial cell')) %>% 
     map(~.x$result) %>% 
     compact
   

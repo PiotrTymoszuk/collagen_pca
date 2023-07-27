@@ -64,8 +64,8 @@
         clust_id = stri_replace(clust_id, fixed = 'Collagen ', replacement = ''), 
         clust_id = factor(clust_id, c('low', 'int', 'hi')), 
         gleason_factor = cut(gleason, 
-                             c(-Inf, 7, Inf), 
-                             c('6 - 7', '8+')))
+                             c(-Inf, 6, 7, Inf), 
+                             c('5 - 6', '7', '8+')))
   
   ## vectors with variables for single analysis tables
   
@@ -124,7 +124,7 @@
          left_join, by = 'variable') %>% 
     map(format_summ_tbl, 
         rm_n = FALSE, 
-        rm_complete = FALSE) %>% 
+        rm_complete = TRUE) %>% 
     map(mutate, 
         variable = exchange(variable, 
                             cs_cluster$lexicon, 

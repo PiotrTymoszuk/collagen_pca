@@ -53,7 +53,8 @@
                         split_factor = 'tissue', 
                         variables = globals$genes_interest$gene_symbol, 
                         what = 'table', 
-                        pub_styled = TRUE)) %>% 
+                        pub_styled = TRUE), 
+               .options = furrr_options(seed = TRUE)) %>% 
     map(reduce, left_join, by = 'variable') %>% 
     map(set_names, c('variable', levels(norm_tumor$analysis_tbl[[1]]$tissue)))
   
@@ -152,18 +153,21 @@
   
   insert_msg('Venn plots')
   
+  ## displaying common regulated genes (at least two cohorts!)
+  
   norm_tumor$venn_plots <- norm_tumor$significant %>% 
     map(~set_names(.x, globals$study_labels[names(.x)])) %>% 
-    map2(., c('Upregulated transcripts', 
-              'Downregulated transcripts'), 
-         ~plot_venn(plotting_lst = .x, 
-                    colors = globals$study_colors[names(norm_tumor$analysis_tbl)], 
-                    plot_title = .y, 
-                    plot_subtitle = 'Tumor vs benign', 
-                    fct_per_line = 1, 
-                    rel_widths = c(0.8, 0.2), 
-                    fontface = 'italic'))
-
+    list(plotting_lst = ., 
+         plot_title = c('Upregulated transcripts', 
+                        'Downregulated transcripts'), 
+         text = norm_tumor$common) %>% 
+    pmap(plot_venn, 
+         colors = globals$study_colors[names(norm_tumor$analysis_tbl)], 
+         plot_subtitle = 'Tumor vs benign', 
+         fct_per_line = 1, 
+         rel_widths = c(0.8, 0.2), 
+         fontface = 'italic')
+  
 # single plots ------
   
   insert_msg('Plots for single variables')

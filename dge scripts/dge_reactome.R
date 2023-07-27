@@ -173,7 +173,7 @@
                             'angiogenesis\ndevelopment\nhemostasis', 
                             'GF\nsignaling',
                             'immune\nsignaling', 
-                            'other\nsignaling', 
+                            'GPCR\nWNT\nNOTCH', 
                             'metabolism\ntransport\ntranslation')))
   
   dge_gsva$hm_plot$data <- 
@@ -182,11 +182,24 @@
               by = 'variable') %>% 
     mutate(sign_label = exchange(variable, dge_gsva$lexicon))
   
+  ## appending the plotting data with effect sizes
+  ## and ANOVA p values
+  
+  dge_gsva$hm_plot$data <- dge_gsva$hm_plot$data %>% 
+    left_join(compress(dge_gsva$eff_size, names_to = 'cohort') %>% 
+                mutate(variable = response), 
+              by = c('variable', 'cohort')) %>% 
+    left_join(map(dge_gsva$test, 
+                  ~.x$anova[c('response', 'p_value')]) %>% 
+                compress(names_to = 'cohort') %>% 
+                mutate(variable = response), 
+              by = c('variable', 'cohort'))
+  
   ## heat map
   
   dge_gsva$hm_plot$plot <- dge_gsva$hm_plot$data %>% 
     ggplot(aes(x = cohort, 
-               y = reorder(sign_label, mean_score), 
+               y = reorder(sign_label, eta_sq), 
                fill = mean_score)) + 
     geom_tile() + 
     facet_grid(class ~ clust_id, 
@@ -207,7 +220,32 @@
     labs(title = 'GSVA, Reactome pathway signatures', 
          subtitle = 'Regulated in at least four cohorts, \u03B7\u00B2 \u2265 0.06', 
          fill = 'mean ssGSEA')
+  
+# Top signatures per category -----
+  
+  insert_msg('Top signatures for category')
 
+  ## signatures differentiating between the clusters from 
+  ## the common regulated ones
+  
+  ## such signatures will be subsequently presented in detailed plots
+  
+  ## mean effect sizes
+  
+  dge_gsva$top_signatures$effect_sizes <- dge_gsva$hm_plot$data %>% 
+    filter(clust_id == 'hi') %>% 
+    select(variable, cohort, eta_sq, class) %>% 
+    summarise(eta_sq = mean(eta_sq), .by = c(variable, class))
+  
+  ## top 5 signatures per class
+  
+  dge_gsva$top_signatures$top_variables <- 
+    dge_gsva$top_signatures$effect_sizes %>% 
+    group_by(class) %>% 
+    top_n(n = 5, eta_sq) %>% 
+    ungroup %>% 
+    arrange(class)
+  
 # END ------
   
   rm(i)

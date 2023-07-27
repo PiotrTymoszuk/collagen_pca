@@ -152,6 +152,7 @@
 # Venn and Upset plotting -----
 
   plot_venn <- function(plotting_lst,  
+                        text = NULL, 
                         colors = c('blue', 'yellow', 'green', 'red'), 
                         plot_title = NULL, 
                         plot_subtitle = NULL, 
@@ -176,10 +177,21 @@
     
     ## feature listing
     
-    feat_txt <- plotting_lst %>% 
-      reduce(intersect) %>% 
-      sort %>% 
+    if(is.null(text)) {
+      
+      feat_txt <- plotting_lst %>% 
+        reduce(intersect) %>% 
+        sort
+      
+    } else {
+      
+      feat_txt <- text
+      
+    }
+    
+    feat_txt <- feat_txt %>% 
       wrap_vector(line_length = fct_per_line)
+    
     
     ## plot panel
     
@@ -364,7 +376,8 @@
     repl <- 
       c('EXTRACELLULAR MATRIX' = 'ECM', 
         'INTERLEUKIN ' = 'IL', 
-        'INSULIN LIKE GROWTH FACTOR BINDING PROTEINS ' = '')
+        'INSULIN LIKE GROWTH FACTOR BINDING PROTEINS ' = '', 
+        'INSULIN LIKE GROWTH FACTOR ' = '')
     
     for(i in names(repl)) {
       
@@ -434,17 +447,17 @@
     if(rm_mean) {
       
       data <- data %>% 
-        map_dfc(stri_replace, regex = 'mean.*\\n', replacement = '') %>% 
-        map_dfc(stri_replace, regex = '^median:\\s{1}', replacement = '') %>% 
-        map_dfc(stri_replace_first, fixed = '\n', replacement = ' ')
+        map_dfc(stri_replace, 
+                regex = 'mean.*\\nmedian:\\s{1}', 
+                replacement = '') %>% 
+        map_dfc(stri_replace, fixed = '\n[', replacement = ' [')
       
     }
     
     if(rm_complete) {
       
       data <- data %>% 
-        map_dfc(stri_replace, fixed = ' complete: ', replacement = '\n') %>% 
-        map_dfc(stri_replace, fixed = '\ncomplete: ', replacement = '\n')
+        map_dfc(stri_replace, fixed = 'complete: ', replacement = '')
       
     }
     
