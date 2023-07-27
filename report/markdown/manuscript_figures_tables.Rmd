@@ -1,6 +1,6 @@
 ---
 title: "Prognostic and biologic relevance of collagen biosynthesis pathway in prostate cancer"
-subtitle: "Bioinformatic methods, figures and tables"
+subtitle: "Transcriptome methods, figures and tables"
 date: "`r format(Sys.time(), '%Y-%m-%d')`"
 
 output: 
@@ -131,7 +131,7 @@ _(B) Gene set variation analysis (GSVA) with Reactome pathway gene signatures. S
 
 _(C) Modulation of KEGG-listed signaling pathways in the collagen^high^ (hi) or collagen^intermediate^ (hi) as compared with collagen^low^ tumors was predicted by the SPIA algorithm based on differential gene expression estimates. Predicted magnitude of pathway modulation (tA parameter) for pathways significantly modulated in at least four cohorts was visualized in bubble plots (tA < 0: inhibition, blue; tA > 0, activation, red). Points are labeled with their tA values. Significant effects are highlighted in bold. Full analysis results are presented in Supplementary Table S8. ECM: extracellular matrix, ACT: actin, SCLC: small cell lung carcinoma, S. aureus: Staphylococcus aureus, SLE: systemic lupus erythematosus._
 
-_(D) Modulation of Recon2 model metabolic reactions in the collagen^high^ (hi) or collagen^intermediate^ (hi) as compared with collagen^low^ tumors was predicted by the BiGGR and biggrExtra algorithms based on differential gene expression estimates. Enrichment of significantly activated and significantly inhibited reactions in the collagen^high^ or collagen^intermediate^ clusters within the Recon model metabolic subsystems was investigated by Fisher's exact test. Enrichment p values were corrected for multiple testing with the false discovery rate method. Enrichment odds ratios for activated (red) and inhibited reaction (blue) for significantly enriched metabolic subsystems shared by at least four cohorts are presented in bubble plots. Points are labeled with their odds ration values. Full analysis results are presented in Supplementary Table S10. Val: valine, Leu: leucine, Ile: isoleucine, FAOX: fatty acid oxidation._
+_(D) Modulation of Recon2 model metabolic reactions in the collagen^high^ (hi) or collagen^intermediate^ (hi) as compared with collagen^low^ tumors was predicted by the BiGGR and biggrExtra algorithms based on whole genome differential gene expression estimates. Enrichment of significantly activated and significantly inhibited reactions in the collagen^high^ or collagen^intermediate^ clusters within the Recon model metabolic subsystems was investigated by Fisher's exact test. Enrichment p values were corrected for multiple testing with the false discovery rate method. Enrichment odds ratios for activated (red) and inhibited reaction (blue) for significantly enriched metabolic subsystems shared by at least four cohorts are presented in bubble plots. Points are labeled with their odds ration values. Full analysis results are presented in Supplementary Table S10. Val: valine, Leu: leucine, Ile: isoleucine, FAOX: fatty acid oxidation._
 
 \newpage
 
