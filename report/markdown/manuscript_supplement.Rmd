@@ -79,7 +79,7 @@ suppl_paper_tbl$cluster[1, 1] %>%
 ```{r tab-clinic, tab.cap = 'Clinical characteristic of the collagen clusters. Numeric variables are presented as medians with interquartile ranges (IQR) and ranges. Nominal variables are presented as percentages and counts of categories within the cluster.'}
 
 flextable::flextable(suppl_paper_tbl$clinic) %>% 
-  set_widths(c(2.2, 3.5, rep(4.5, 3), 2.8, 2.8)) %>% 
+  set_widths(c(2.2, 3, rep(3.5, 3), 2.8, 2.8)) %>% 
   merge_v(1:2) %>% 
   footnote(1, 2, 
            value = as_paragraph('PSA: prostate-specific antigen.'), 
