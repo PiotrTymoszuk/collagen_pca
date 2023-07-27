@@ -17,7 +17,7 @@ To access manuscript files, please use the following links:
 
 * a Word file with [main manuscript tables, figures and parts of methods](https://github.com/PiotrTymoszuk/collagen_pca/blob/main/report/report_supplementary_tables.xlsx)
 
-* a Word file with _manuscript supplementary material_: still pending
+* a Word file with [manuscript supplementary material](https://github.com/PiotrTymoszuk/collagen_pca/blob/main/report/manuscript_supplement.docx)
 
 * PDF files with [main manuscript figures](https://github.com/PiotrTymoszuk/collagen_pca/tree/main/report/manuscript%20figures)
 
