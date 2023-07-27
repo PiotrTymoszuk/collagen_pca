@@ -21,7 +21,7 @@ To access manuscript files, please use the following links:
 
 * PDF files with [main manuscript figures](https://github.com/PiotrTymoszuk/collagen_pca/tree/main/report/manuscript%20figures)
 
-* PDF files with _supplementary manuscript figures_: still pending
+* PDF files with [supplementary manuscript figures](https://github.com/PiotrTymoszuk/collagen_pca/tree/main/report/manuscript%20supplementary%20figures)
 
 * an Excel file with [manuscript supplementary tables](https://github.com/PiotrTymoszuk/collagen_pca/blob/main/report/manuscript_supplementary_tables.xlsx)
 
