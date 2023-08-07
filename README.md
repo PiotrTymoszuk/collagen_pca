@@ -5,7 +5,7 @@ Expression, biological and clinical relevance of the collagen pathway genes in p
 
 To access manuscript files, please use the following links:
 
-* a Word file with [main manuscript tables, figures and parts of methods](https://github.com/PiotrTymoszuk/collagen_pca/blob/main/report/report_supplementary_tables.xlsx)
+* a Word file with [main manuscript tables, figures and parts of methods](https://github.com/PiotrTymoszuk/collagen_pca/blob/main/report/manuscript_figures_tables.docx)
 
 * a Word file with [manuscript supplementary material](https://github.com/PiotrTymoszuk/collagen_pca/blob/main/report/manuscript_supplement.docx)
 
