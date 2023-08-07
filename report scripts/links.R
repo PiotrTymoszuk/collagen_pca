@@ -19,7 +19,8 @@
          'microViz' = 'https://github.com/PiotrTymoszuk/microViz', 
          'biggrExtra' = 'https://github.com/PiotrTymoszuk/biggrExtra', 
          'coxExtensions' = 'https://github.com/PiotrTymoszuk/coxExtensions', 
-         'kmOptimizer' = 'https://github.com/PiotrTymoszuk/kmOptimizer') %>%
+         'kmOptimizer' = 'https://github.com/PiotrTymoszuk/kmOptimizer', 
+         'gseaTools' = 'https://github.com/PiotrTymoszuk/gseaTools') %>%
     compress(names_to = 'obj_name',
              values_to = 'x') %>%
     mutate(ref_name = paste0('_', obj_name, '_'))

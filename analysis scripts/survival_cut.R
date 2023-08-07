@@ -172,83 +172,86 @@
          y = list(expression('-log'[10] * ' pFDR, Mentel-Henszel test'), 
                   expression('-log'[10] * ' p raw, Mentel-Henszel test'))) %>% 
     pmap(function(x, y) list(data = surv_cut$summary_tbl, 
-                            plot_title = paste('Survival markers', 
-                                               globals$study_labels[names(surv_cut$summary_tbl)], 
-                                               sep = ', '), 
-                            plot_subtitle = map2(c('OS', rep('RFS', 4)), 
-                                                 surv_cut$n_tags, 
-                                                 paste, sep = ', ')) %>% 
-          pmap(plot_signifcant, 
-               p_variable = x, 
-               label_variable = 'variable', 
-               top_significant = 30, 
-               x_lab = y, 
-               cust_theme = globals$common_theme) %>% 
-          map(~.x + 
-                theme(axis.text.y = element_markdown(), 
-                      plot.tag = element_blank()) + 
-                scale_y_discrete(labels = function(x) exchange(x, 
-                                                               surv_cut$var_labs, 
-                                                               value = 'html_label')) + 
-                scale_fill_manual(values = c(ns = 'gray60', 
-                                             significant = 'coral3'), 
-                                  labels = c(ns = 'ns', 
-                                             significant = 'p < 0.05'))))
+                             plot_title = paste('Survival markers', 
+                                                globals$study_labels[names(surv_cut$summary_tbl)], 
+                                                sep = ', '), 
+                             plot_subtitle = map2(c('OS', rep('RFS', 4)), 
+                                                  surv_cut$n_tags, 
+                                                  paste, sep = ', ')) %>% 
+           future_pmap(plot_signifcant, 
+                       p_variable = x, 
+                       label_variable = 'variable', 
+                       top_significant = 30, 
+                       x_lab = y, 
+                       cust_theme = globals$common_theme, 
+                       .options = furrr_options(seed = TRUE)) %>% 
+           map(~.x + 
+                 theme(axis.text.y = element_markdown(), 
+                       plot.tag = element_blank()) + 
+                 scale_y_discrete(labels = function(x) exchange(x, 
+                                                                surv_cut$var_labs, 
+                                                                value = 'html_label')) + 
+                 scale_fill_manual(values = c(ns = 'gray60', 
+                                              significant = 'coral3'), 
+                                   labels = c(ns = 'ns', 
+                                              significant = 'p < 0.05'))))
   
 # KM plots ------
   
   insert_msg('KM plots')
   
-  for(i in names(surv_cut$cutoff_obj)) {
+  ## not done at the moment, memory sparing!
+  
+ # for(i in names(surv_cut$cutoff_obj)) {
     
     ## base plots
     
-    surv_cut$km_plots[[i]] <- 
-      list(x = surv_cut$cutoff_obj[[i]], 
-           title = names(surv_cut$cutoff_obj[[i]]) %>% 
-             exchange(surv_cut$var_labs, 
-                      value = 'html_label') %>% 
-             paste(globals$study_labels[[1]], sep = ', ') %>% 
-             paste0('<b>', ., '</b>'), 
-           xlab = surv_cut$km_axis_title[[i]]) %>% 
-      future_pmap(safely(plot.survcut), 
-                  type = 'km', 
-                  .options = furrr_options(seed = TRUE)) %>% 
-      map(~.x$result) %>% 
-      compact
+  #  surv_cut$km_plots[[i]] <- 
+   #   list(x = surv_cut$cutoff_obj[[i]], 
+    #       title = names(surv_cut$cutoff_obj[[i]]) %>% 
+     #        exchange(surv_cut$var_labs, 
+      #                value = 'html_label') %>% 
+       #      paste(globals$study_labels[[1]], sep = ', ') %>% 
+        #     paste0('<b>', ., '</b>'), 
+         #  xlab = surv_cut$km_axis_title[[i]]) %>% 
+    #  future_pmap(safely(plot.survcut), 
+     #             type = 'km', 
+      #            .options = furrr_options(seed = TRUE)) %>% 
+    #  map(~.x$result) %>% 
+     # compact
     
     ## appending them with the number of cases and events
     ## cutoff and p value is displayed in the plot
     ## numbers of cases in the strata are displayed in the legend
     
-    surv_cut$km_plots[[i]] <- 
-      list(x = surv_cut$km_plots[[i]], 
-           y = names(surv_cut$km_plots[[i]]) %>% 
-             exchange(surv_cut$var_labs, 
-                      value = 'html_label'), 
-           z = names(surv_cut$km_plots[[i]]) %>% 
-             exchange(surv_cut$summary_tbl[[i]], 
-                      key = 'variable', 
-                      value = 'plot_cap'), 
-           v = surv_cut$km_legends[[i]]) %>% 
-      pmap(function(x, y, z, v) x$plot + 
-             labs(subtitle = surv_cut$n_tags[[i]], 
-                  color = y) + 
-             annotate('text', 
-                      label = z, 
-                      x = 0, 
-                      y = 0.1, 
-                      size = 2.75, 
-                      hjust = 0, 
-                      vjust = 0) + 
-             scale_color_manual(values = c('steelblue', 'firebrick'), 
-                                labels = v) + 
-             globals$common_theme + 
-             theme(plot.tag = element_blank(), 
-                   plot.title = element_markdown(), 
-                   legend.title = element_markdown()))
+  #  surv_cut$km_plots[[i]] <- 
+   #   list(x = surv_cut$km_plots[[i]], 
+    #       y = names(surv_cut$km_plots[[i]]) %>% 
+     #        exchange(surv_cut$var_labs, 
+      #                value = 'html_label'), 
+       #    z = names(surv_cut$km_plots[[i]]) %>% 
+        #     exchange(surv_cut$summary_tbl[[i]], 
+         #             key = 'variable', 
+          #            value = 'plot_cap'), 
+          # v = surv_cut$km_legends[[i]]) %>% 
+    #  pmap(function(x, y, z, v) x$plot + 
+     #        labs(subtitle = surv_cut$n_tags[[i]], 
+      #            color = y) + 
+       #      annotate('text', 
+        #              label = z, 
+         #             x = 0, 
+          #            y = 0.1, 
+           #           size = 2.75, 
+            #          hjust = 0, 
+             #         vjust = 0) + 
+          #   scale_color_manual(values = c('steelblue', 'firebrick'), 
+           #                     labels = v) + 
+            # globals$common_theme + 
+          #   theme(plot.tag = element_blank(), 
+           #        plot.title = element_markdown(), 
+            #       legend.title = element_markdown()))
     
-  }
+  #}
 
 # END -----
   

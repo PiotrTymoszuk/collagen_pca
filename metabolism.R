@@ -62,7 +62,7 @@
     
   } else {
     
-    c('/metabolism scripts/metab_enrichment.R') %>% 
+    c('./metabolism scripts/metab_enrichment.R') %>% 
       source_all(message = TRUE, crash = TRUE)
     
   }

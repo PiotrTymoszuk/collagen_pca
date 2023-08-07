@@ -1,62 +1,100 @@
-# This script imports prostate cancer data from GEO (GSE16560, GSE40272, GSE70768 and GSE70769)
+# Import of the GEO datasets 
 
-  insert_head()
-  
+
+insert_head()
+
+# tools ------
+
+  library(tidyverse)
+  library(GEOquery)
+
 # data containers -----
-  
+
   geo_globals <- list()
   geo_data <- list()
-    
-# definition of folders with data to import and strings to clear from the design data sets ----
   
-  geo_globals$study_list <- c('GSE16560', 
-                              'GSE40272-GPL15971',
-                              'GSE40272-GPL15972', 
-                              'GSE40272-GPL15973', 
-                              'GSE40272-GPL9497', 
-                              'GSE70768', 
-                              'GSE70769') %>% 
-    paste('./input data', ., sep = '/')
+# fetching the GEO objects ------
   
-  geo_globals$clearing_strings <- c('gleason', ': ', 'major.', 'fup.month', 'diag.yr', 'status.all', 'extreme', 'cancer.percent', 
-                                    'age', 'batch', 'minor.', 'ethnicity', 'individual', 'disease state', 'pre-operation treatment', 
-                                    'tissue', 'disease free survival', 'sample type', 'tumour', '%', 'iclusterplus group', 
-                                    'extra-capsular extension (ece)', 'positive surgical margins (psm)', 'biochemical relapse (bcr)',
-                                    'time to bcr (months)', 'tmprss2ERG gene fusion status:', 'at diag', 'psa ', 'clinical ', 'pathology ', 
-                                    'total follow up (months)', 'st', 'extra capsular extension (ece)', 'derived data ()')
+  insert_msg('Fetching the GEO objects')
   
-# definition of objects exported to the processor cluster for parallel computing ---- 
+  geo_globals$ids <- 
+    c('GSE16560', 
+      'GSE70768', 
+      'GSE70769', 
+      'GSE116918')
   
-  geo_globals$cl_export <- c('transpose_tibble', 'read_expression', 'read_design', 'read_annotation', 
-                             'untangle_gleason_sum', 'read_study', 'read_excel', 'parse_guess', 'as_tibble', 'set_names', 
-                             'geo_globals', 'left_join', 'filter', 'select')
+  geo_globals$ids <- 
+    set_names(geo_globals$ids, geo_globals$ids)
+  
+  geo_data$objects <- geo_globals$ids %>% 
+    map(~getGEO(.x, destdir = './data'))
+  
+# Unpacking the annotation data ------
+  
+  insert_msg('Unpacking the annotation data')
+  
+  ## in case of multiple Entrez IDs per probe, the first Entrez ID is taken
+  
+  geo_data$annotation <- geo_data$objects %>% 
+    map(~.x[[1]]) %>% 
+    map(fData) %>% 
+    map(as_tibble)
+  
+  geo_data$annotation$GSE16560 <- geo_data$annotation$GSE16560 %>% 
+    transmute(probe_ID = ID, 
+              gene_ID = stri_extract(GeneID, regex = '\\d+'), 
+              transcript_ID = GB_ACC, 
+              symbol = Symbol, 
+              description = Description)
+  
+  geo_data$annotation[c("GSE70768", "GSE70769")] <- 
+    geo_data$annotation[c("GSE70768", "GSE70769")] %>% 
+    map(transmute, 
+        probe_ID = ID, 
+        gene_ID = stri_extract(Entrez_Gene_ID, regex = '\\d+'), 
+        transcript_ID = Source_Reference_ID, 
+        symbol = Symbol, 
+        description = Definition)
+  
+  geo_data$annotation$GSE116918 <- geo_data$annotation$GSE116918 %>% 
+    transmute(probe_ID = ID, 
+              gene_ID = stri_extract(`Entrez Gene`, regex = '\\d+'), 
+              symbol = stri_extract(`Gene Symbol`, regex = '^\\w+'), 
+              description = `Gene Description`)
+  
+  ## restricting the annotation data only to the genes Entrez ID
+  
+  geo_data$annotation <- geo_data$annotation %>% 
+    map(filter, !is.na(gene_ID))
+  
+# Expression data -------
+  
+  insert_msg('Expression data')
+  
+  geo_data$expression <- geo_data$objects %>% 
+    map(~.x[[1]]) %>% 
+    map(exprs) %>% 
+    map(t) %>% 
+    map(as.data.frame) %>% 
+    map(rownames_to_column, 'sample_ID') %>% 
+    map(as_tibble)
+  
+# Phenotype data ------
+  
+  insert_msg('Phenotype data')
+  
+  geo_data$clinic <- geo_data$objects %>% 
+    map(~.x[[1]]) %>% 
+    map(pData) %>% 
+    map(as_tibble)
 
-# reading whole genome data ----
+# Clearing the container list -----
   
-  cl <- makeCluster(7)
+  insert_msg('Cleaning the container list')
   
-  registerDoParallel(cl)
+  geo_data <- geo_data[c("clinic", "expression", "annotation")] %>% 
+    transpose
   
-  clusterExport(cl, geo_globals$cl_export)
-  
-  geo_data <- llply(geo_globals$study_list, 
-                    function(x) read_study(x, 
-                                           merge_clinical = T, 
-                                           geo_globals$clearing_strings), 
-                    .parallel = T) %>% 
-    set_names(c('GSE16560', 
-                'GSE40272-GPL15971',
-                'GSE40272-GPL15972', 
-                'GSE40272-GPL15973', 
-                'GSE40272-GPL9497', 
-                'GSE70768', 
-                'GSE70769'))
-  
-  stopCluster(cl)
-  
-# END ----
+# END -----
   
   insert_tail()
-
-  
-  

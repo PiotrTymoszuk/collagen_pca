@@ -58,7 +58,7 @@
   
   if(file.exists('./cache/dge_spia.RData')) {
     
-    insert_msg('Loading cached signalig results')
+    insert_msg('Loading cached signaling results')
     
     load('./cache/dge_spia.RData')
     

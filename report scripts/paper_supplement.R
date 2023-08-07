@@ -10,7 +10,7 @@
   
   insert_msg('Figure S1: comparison of expression, tumor versus normal')
   
-  ## upper panel, Venn plots, genes regulated in at least two cohort
+  ## upper panel, Venn plots, genes regulated in both two cohort
   ## are listed
   
   suppl_paper_fig$norm_tumor$upper <- 
@@ -19,16 +19,17 @@
               align = 'hv', 
               axis = 'tblr')
   
-  ## bottom panel, Volcano plots with significance 
-  ## and effect size of the regulation
+  ## bottom panel, ribbon plots
   
   suppl_paper_fig$norm_tumor$bottom <- 
-    norm_tumor$volcano_plots %>% 
+    norm_tumor$ribbon_plots$plots %>% 
     map(~.x + 
-          theme(legend.position = 'none')) %>% 
-    c(list(legend = get_legend(norm_tumor$volcano_plots[[1]]))) %>% 
+          theme(legend.position = 'none', 
+                axis.text.y = element_markdown(size = 7))) %>% 
+    c(list(legend = get_legend(norm_tumor$ribbon_plots$plots[[1]]))) %>% 
     plot_grid(plotlist = ., 
-              ncol = 2, 
+              ncol = 3, 
+              rel_widths = c(1, 1, 0.25), 
               align = 'hv', 
               axis = 'tblr')
   
@@ -40,7 +41,7 @@
               nrow = 2, 
               align = 'hv', 
               axis = 'tblr', 
-              rel_heights = c(1, 2), 
+              rel_heights = c(0.25, 1), 
               labels = LETTERS, 
               label_size = 10) %>% 
     as_figure(label = 'figure_s1_normal_tumor', 
@@ -114,23 +115,26 @@
   insert_msg('Figure S3: cluster defining factors')
   
   suppl_paper_fig$clusters <- 
-    coll_clust$ribbon_plots[c('tcga', 
-                              'GSE16560', 
-                              'GSE40272', 
-                              'GSE70768', 
-                              'GSE70769')] %>% 
+    coll_clust$ribbon_plots[c("tcga", 
+                              "GSE16560", 
+                              "GSE70768", 
+                              "GSE70769", 
+                              "GSE116918")] %>% 
     map2(., 
          c('TCGA, training', 
            'GSE16560, test', 
-           'GSE40272, test', 
            'GSE70768, test', 
-           'GSE70769, test'), 
+           'GSE70769, test', 
+           'GSE116918, test'), 
          ~.x + 
            labs(title = .y) + 
            theme(legend.position = 'none', 
                  plot.title.position = 'plot', 
                  strip.text = element_text(size = 6), 
-                 axis.text.y = element_markdown(size = 7), 
+                 axis.text.y = element_markdown(size = 6),
+                 plot.subtitle = element_text(size = 7), 
+                 axis.text.x = element_text(size = 7), 
+                 axis.title.x = element_text(size = 7), 
                  plot.margin = ggplot2::margin(t = 2, 
                                                r = 2, 
                                                b = 2, 
@@ -147,9 +151,7 @@
                               "in the collagen clusters of prostate cancers."), 
               w = 180, 
               h = 230)
-  
-# Figure S  
-  
+
 # Figure S4: clusters and infiltration, MCP counter ------
   
   insert_msg('Figure S4: clusters and infiltration, MCP counter')
@@ -301,7 +303,8 @@
   suppl_paper_fig$top_gsva <- 
     plot_grid(suppl_paper_fig$top_gsva + 
                 scale_y_discrete(labels = function(x) map_chr(x, gsva_labeller)) + 
-                theme(legend.position = 'bottom')) %>% 
+                theme(legend.position = 'bottom', 
+                      plot.subtitle = element_blank())) %>% 
     as_figure(label = 'figure_s7_gsva_reactome_representative', 
               ref_name = 'top_gsva', 
               caption = paste('Gene set variation analysis results', 
@@ -315,104 +318,79 @@
   
   insert_msg('Figure S8: Differential gene expression, gene numbers')
 
-  suppl_paper_fig$dge_numbers <- dge_plots$dge_numbers$plots %>% 
-    map(~.x + 
-          expand_limits(x = 25) + 
-          theme(legend.position = 'none')) %>% 
-    plot_grid(plotlist = ., 
-              ncol = 2, 
-              align = 'hv',
-              axis = 'tblr') %>% 
-    plot_grid(get_legend(dge_plots$dge_numbers$plots[[1]] + 
-                           theme(legend.position = 'bottom')), 
-              nrow = 2, 
-              rel_heights = c(0.85, 0.15)) %>% 
+  suppl_paper_fig$dge_numbers <- dge_plots$dge_numbers$plot %>% 
     as_figure(label = 'figure_s8_diff_gene_expression_numbers', 
               ref_name = 'dge_numbers', 
               caption = paste('Percentages of the analyzed transcriptome', 
-                              'significantly up- and downregulated in the',
-                              'collagen high and collagen low clusters.'), 
-              w = 180, 
+                              'significantly up- and downregulated in',
+                              'collagen high vs collagen low cluster cancers.'), 
+              w = 150, 
               h = 90)
   
-# Figure S9 - S10: top differentially expressed genes -----
+# Figure S9: top differentially expressed genes -----
   
-  insert_msg('Figure S9 - S10: top differentially expressed genes')
+  insert_msg('Figure S9: top differentially expressed genes')
   
-  suppl_paper_fig[c('dge_top_int', 'dge_top_hi')] <- dge_plots$top_plots %>% 
-    map(map, 
-        ~.x + 
+  suppl_paper_fig$top_dge <- dge_plots$top_plots %>% 
+    map(~.x + 
           labs(subtitle = .x$labels$subtitle %>% 
                  stri_replace_all(regex = '(Collagen|clusters:)\\s{1}', 
                                   replacement = '')) + 
           theme(legend.position = 'none', 
                 plot.title.position = 'plot', 
                 axis.text.y = element_text(size = 7))) %>% 
-    map(~c(.x, list(get_legend(dge_plots$top_plots[[1]][[1]])))) %>% 
-    map(~plot_grid(plotlist = ., 
-                   ncol = 3, 
-                   align = 'hv',
-                   axis = 'tblr'))
-  
-  suppl_paper_fig[c('dge_top_int', 'dge_top_hi')] <- 
-    suppl_paper_fig[c('dge_top_int', 'dge_top_hi')] %>% 
-    list(x = ., 
-         label = c('figure_s9_diff_gene_expression_top_intermediate', 
-                   'figure_s10_diff_gene_expression_top_high'), 
-         ref_name = names(.), 
-         caption = c(paste('Top strongest differentially expressed genes in', 
-                           'the collagen inetrmediate cluster as compared with', 
-                           'collagen low cancers.'),
-                     paste('Top strongest differentially expressed genes in', 
-                           'the collagen high cluster as compared with', 
-                           'collagen low cancers.'))) %>% 
-    pmap(as_figure, 
-         w = 180,
-         h = 230)
-  
-# Figure S11: numbers of differentially regulated reactions ------
-  
-  insert_msg('Figure S11: numbers of differentially regulated reactions')
-  
-  suppl_paper_fig$reaction_counts <- meta_plots$counts$plots %>% 
-    map(~.x + theme(legend.position = 'none')) %>% 
+    c(list(get_legend(dge_plots$top_plots[[1]]))) %>% 
     plot_grid(plotlist = ., 
-              ncol = 2, 
-              align = 'hv', 
+              ncol = 3, 
+              align = 'hv',
               axis = 'tblr') %>% 
-    plot_grid(get_legend(meta_plots$counts$plots + 
-                           theme(legend.position = 'bottom')), 
-              nrow = 2, 
-              rel_heights = c(0.85, 0.15)) %>% 
-    as_figure(label = 'figure_s11_clusters_reaction_numbers', 
+    as_figure(label = 'figure_s9_top_diff_gene_expression', 
+              ref_name = 'top_dge', 
+              caption = paste('Top strongest differentially expressed genes in', 
+                              'the collagen high cluster as compared with', 
+                              'collagen low cancers.'), 
+              w = 180, 
+              h = 230)
+
+# Figure S10: numbers of differentially regulated reactions ------
+  
+  insert_msg('Figure S10: numbers of differentially regulated reactions')
+  
+  suppl_paper_fig$reaction_counts <- meta_plots$counts$plot %>% 
+    as_figure(label = 'figure_s10_clusters_reaction_numbers', 
               ref_name = 'reaction_counts', 
               caption = paste('Numbers of significantly activated and', 
                               'inhibited biochemical reactions predicted', 
-                              'for the collagen high and collagen', 
-                              'intermediate clusters.'), 
-              w = 180, 
+                              'for the collagen high cluster', 
+                              'as compared with collagen low cancers.'), 
+              w = 150, 
               h = 90)
+
+# Figure S11: regulation of fatty acid oxidation and TCA reactions ------
   
-# Figure S12: regulation of fatty acid oxidation ------
+  insert_msg('Figure S11: Regulation of FAOX and TCA reactions')
   
-  insert_msg('Figure S12: Regulation of fatty acid oxidation reactions')
-  
-  suppl_paper_fig$faox <- meta_hg$regulation_plots %>% 
-    map(~.x[['Fatty acid oxidation']]) %>% 
-    map2(., c('Collagen int vs low', 'Collagen hi vs low'), 
-        function(x, y) x %>% 
-          map(~.x + 
-                scale_y_continuous(limits = c(-1.5, 2.1)) + 
-                labs(title = .x$labels$title %>% 
-                       stri_replace(fixed = 'Fatty acid oxidation', 
-                                    replacement = y), 
-                     x = 'FAOX') + 
-                theme(legend.position = 'none'))) %>% 
-    map(~c(.x, 
-           list(get_legend(meta_hg$regulation_plots$hi$`Fatty acid oxidation`$tcga)))) %>% 
+  suppl_paper_fig$faox <- c('Fatty acid oxidation', 
+                            'Citric acid cycle') %>% 
+    map(~meta_hg$regulation_plots[[.x]]) %>% 
+    list(react = ., 
+         label = c('FAOX reactions', 'TCA reactions'), 
+         span = list(c(-1.1, 1.5), 
+                  c(-0.82, 0.15))) %>% 
+    pmap(function(react, label, span) react %>% 
+            map(~.x + 
+                  labs(title = .x$labels$title %>% 
+                         stri_replace(regex = '.*,\\s{1}', 
+                                      replacement = ''), 
+                       x = .x$labels$x %>% 
+                         stri_replace(fixed = 'Reactions', 
+                                      replacement = label)) + 
+                  theme(legend.position = 'none') + 
+                  scale_y_continuous(limits = span))) %>% 
+    map(~c(.x, list(get_legend(meta_hg$regulation_plots[[1]][[1]])))) %>% 
     unlist(recursive = FALSE) %>% 
-    plot_grid(plotlist = .,
-              ncol = 3,
+    plot_grid(plotlist = ., 
+              ncol = 3, 
               align = 'hv', 
               axis = 'tblr', 
               labels = c('A', '', '', 
@@ -420,34 +398,40 @@
                          'B', '', '', 
                          '', '', ''), 
               label_size = 10) %>% 
-    as_figure(label = 'figure_s12_clusters_faox_activity', 
+    as_figure(label = 'figure_s11_clusters_faox_and_tca_activity', 
               ref_name = 'faox', 
-              caption = paste('Activity of fatty acid oxidation reactions', 
-                              'predicted for the collagen high and', 
-                              'collagen intermediate clusters.'), 
+              caption = paste('Activity of fatty acid oxidation and', 
+                              'citric acid cycle reactions', 
+                              'predicted for the collagen high cluster', 
+                              'as compared with collagen low cancers.'), 
               w = 180,
               h = 230)
   
-# Figure S13: regulation of extracellular transport reactions ------
+# Figure S12: regulation of extracellular transport reactions ------
   
-  insert_msg('Figure S13: regulation of extracellular transport reactions')
+  insert_msg('Figure S12: regulation of extracellular transport reactions')
   
-  suppl_paper_fig$extrans <- meta_hg$regulation_plots %>% 
-    map(~.x[['Transport, extracellular']]) %>% 
-    map2(., c('Collagen int vs low', 'Collagen hi vs low'), 
-         function(x, y) x %>% 
+  suppl_paper_fig$extrans <- c('Chondroitin synthesis', 
+                               'Transport, extracellular') %>% 
+    map(~meta_hg$regulation_plots[[.x]]) %>% 
+    list(react = ., 
+         label = c('CS reactions', 'ExTrans reactions'), 
+         span = list(c(-0.4, 1.5), 
+                     c(-1.75, 2.5))) %>% 
+    pmap(function(react, label, span) react %>% 
            map(~.x + 
-                 scale_y_continuous(limits = c(-1.5, 2.5)) + 
                  labs(title = .x$labels$title %>% 
-                        stri_replace(fixed = 'Transport, extracellular', 
-                                     replacement = y), 
-                      x = 'ExTrans reaction') + 
-                 theme(legend.position = 'none'))) %>% 
-    map(~c(.x, 
-           list(get_legend(meta_hg$regulation_plots$hi$`Transport, extracellular`$tcga)))) %>% 
+                        stri_replace(regex = '.*,\\s{1}', 
+                                     replacement = ''), 
+                      x = .x$labels$x %>% 
+                        stri_replace(fixed = 'Reactions', 
+                                     replacement = label)) + 
+                 theme(legend.position = 'none') + 
+                 scale_y_continuous(limits = span))) %>% 
+    map(~c(.x, list(get_legend(meta_hg$regulation_plots[[1]][[1]])))) %>% 
     unlist(recursive = FALSE) %>% 
-    plot_grid(plotlist = .,
-              ncol = 3,
+    plot_grid(plotlist = ., 
+              ncol = 3, 
               align = 'hv', 
               axis = 'tblr', 
               labels = c('A', '', '', 
@@ -455,11 +439,12 @@
                          'B', '', '', 
                          '', '', ''), 
               label_size = 10) %>% 
-    as_figure(label = 'figure_s12_clusters_extransport_activity', 
+    as_figure(label = 'figure_s12_clusters_chondroitin_and_transport_activity', 
               ref_name = 'extrans', 
-              caption = paste('Activity of extracellular transport reactions', 
-                              'predicted for the collagen high and', 
-                              'collagen intermediate clusters.'), 
+              caption = paste('Activity of chondroitin synthesis and', 
+                              'extracellular transport reactions', 
+                              'predicted for the collagen high cluster', 
+                              'as compared with collagen low cancers.'), 
               w = 180,
               h = 230)
   

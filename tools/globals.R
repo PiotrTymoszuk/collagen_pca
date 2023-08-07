@@ -46,16 +46,67 @@
   
   ## classification of the genes by their function
   
+  globals$gene_classes <-
+    c('ALDH18A1' = 'Pro', 
+      'PYCR1' = 'Pro', 
+      'PLOD2' = 'collagen modification', 
+      'P4HA1' = 'collagen modification', 
+      'P4HA2' = 'collagen modification', 
+      'PEPD' = 'Pro', 
+      'COL3A1' = 'ECM component', 
+      'COL2A1' = 'ECM component', 
+      'COL11A1' = 'ECM component', 
+      'COL11A2' = 'ECM component', 
+      'COL5A2' = 'ECM component', 
+      'COL5A1' = 'ECM component', 
+      'COL1A2' = 'ECM component', 
+      'COL7A1' = 'ECM component', 
+      'BMP1' = 'ECM processing', 
+      'LAMA3' = 'ECM component', 
+      'LAMC2' = 'ECM component', 
+      'LAMB3' = 'ECM component', 
+      'COL4A2' = 'ECM component', 
+      'COL4A1' = 'ECM component', 
+      'COL4A5' = 'ECM component', 
+      'COL4A3' = 'ECM component', 
+      'COL4A6' = 'ECM component', 
+      'MMP13' = 'ECM processing', 
+      'MMP9' = 'ECM processing', 
+      'CTSS' = 'ECM processing', 
+      'MMP7' = 'ECM processing', 
+      'COL18A1' = 'ECM component', 
+      'COL15A1' = 'ECM component', 
+      'COL14A1' = 'ECM component', 
+      'COL6A3' = 'ECM component', 
+      'COL6A1' = 'ECM component', 
+      'COL6A2' = 'ECM component', 
+      'DST' = 'adhesion', 
+      'COL17A1' = 'ECM component', 
+      'ITGA6' = 'adhesion', 
+      'ITGB4' = 'adhesion', 
+      'CD151' = 'adhesion', 
+      'COL9A2' = 'ECM component', 
+      'COL9A1' = 'ECM component', 
+      'COL9A3' = 'ECM component', 
+      'PCOLCE' = 'ECM processing', 
+      'LOXL2' = 'collagen modification', 
+      'LOXL1' = 'collagen modification', 
+      'LOX' = 'collagen modification', 
+      'COL16A1' = 'ECM component', 
+      'COL19A1' = 'ECM component', 
+      'PLOD3' = 'collagen modification', 
+      'PLOD1' = 'collagen modification', 
+      'P4HB' = 'collagen modification', 
+      'ADAMTS2' = 'ECM processing', 
+      'PPIB' = 'collagen modification', 
+      'SERPINH1' = 'ECM processing', 
+      'PCOLCE2' = 'ECM processing', 
+      'COL1A1' = 'ECM component') %>% 
+    compress(names_to = 'gene_symbol', 
+             values_to = 'gene_group')
+  
   globals$genes_interest <- globals$genes_interest %>% 
-    mutate(gene_group = ifelse(gene_symbol %in% c('ALDH18A1', 
-                                                  'PYCR1', 
-                                                  'PYCR2', 
-                                                  'PEPD'), 
-                               'proline pathway', 
-                               ifelse(stri_detect(gene_symbol, regex = 'COL\\d+') | 
-                                        gene_symbol %in% c('LAMB3', 'ITGA6', 'CD151'), 
-                                      'ECM component', 
-                                      'ECM processing')))
+    left_join(globals$gene_classes, by = 'gene_symbol')
   
 # clinical variables -------
   
@@ -66,14 +117,14 @@
       'pathology_stage_tumor' = 'Pathological tumor stage', 
       'pathology_stage_node' = 'Pathological node stage', 
       'pathology_stage_meta' = 'Pathological metastasis stage', 
-      'gleason' = 'Gleason sum score', 
-      'gleason_factor' = 'Gleason sum score', 
+      'gleason' = 'Gleason score', 
+      'gleason_factor' = 'Gleason score', 
       'positive_surgical_margins' = 'Positive surgical margins', 
       'extra_capsular_extension' = 'Extracapsular extension', 
       'death' = 'Death', 
       'vitality_fup' = 'Overall survival, months', 
-      'relapse' = 'Relapse', 
-      'relapse_fup' = 'Relapse-free survival, months') %>% 
+      'relapse' = 'Biochemical relapse', 
+      'relapse_fup' = 'Biochemical relapse-free survival, months') %>% 
     compress(names_to = 'variable', 
              values_to = 'label') %>% 
     mutate(format = ifelse(variable %in% c('age', 
@@ -118,15 +169,15 @@
 # Study labels and colors --------
   
   globals$study_labels <- c('GSE16560' = 'GSE16560', 
-                            'GSE40272' = 'GSE40272', 
                             'GSE70768' = 'GSE70768', 
                             'GSE70769' = 'GSE70769', 
+                            'GSE116918' = 'GSE116918', 
                             'tcga' = 'TCGA')
   
   globals$study_colors <- c('GSE16560' = 'cornflowerblue', 
-                            'GSE40272' = 'cornsilk4', 
                             'GSE70768' = 'darkseagreen4', 
                             'GSE70769' = 'darkorange2', 
+                            'GSE116918' = 'cornsilk4', 
                             'tcga' = 'coral3')
   
 # Cluster colors -------

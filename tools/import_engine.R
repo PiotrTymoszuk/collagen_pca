@@ -389,7 +389,7 @@
                             reposit_identifier = 'sample_ID') {
     
     ## screens the expression table for duplicates and chooses the sample
-    ## with the latest reportitory id
+    ## with the latest repository id
     
     start_time <- Sys.time()
     message(paste('Screening for duplicates within', 

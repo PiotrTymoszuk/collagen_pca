@@ -2,6 +2,10 @@
 
   insert_head()
 
+# container ------
+
+  tcga_cleared <- list()
+
 # merging the clinical and expression data ------
 
   insert_msg('Merging the clinical and expression data')
@@ -58,7 +62,7 @@
   
   insert_msg('Integrating the TCGA data')
   
-  study_data$tcga <- integrate_expression(expression_tbl = tcga_data$expression, 
+  tcga_cleared <- integrate_expression(expression_tbl = tcga_data$expression, 
                                           annotation_tbl = tcga_data$annotation %>% 
                                             set_names(c('probe_ID', 'symbol', 'protein')), 
                                           gene_identifier = 'symbol', 
@@ -69,13 +73,13 @@
   
   insert_msg('Duplicate removal')
   
-  study_data$tcga$expression <- study_data$tcga$expression %>% 
+  tcga_cleared$expression <- tcga_cleared$expression %>% 
     dlply(.(tissue), 
           rm_duplicates, 
           patient_identifier = 'patient_id', 
           reposit_identifier = 'entity_submitter_id') %>% 
     reduce(rbind)
-
+  
 # END ----
   
   insert_msg()

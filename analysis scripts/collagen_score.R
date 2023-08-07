@@ -24,7 +24,7 @@
   
   coll_score$variables <- globals$genes_interest$gene_symbol
   
-  ## analysis tables: survival informaiton
+  ## analysis tables: survival information
   
   coll_score$analysis_tbl <- study_data %>% 
     map(~.x$expression) %>% 

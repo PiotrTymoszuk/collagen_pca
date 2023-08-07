@@ -1,8 +1,8 @@
 # Identification of differentially regulated genes 
 # between the Collagen clusters
-# Differentially regulated genes are identified by one-way ANOVA
+# Differentially regulated genes are identified by two-tailed T test
 # corrected for multiple testing with the Benjamini-Hochberg method
-# Regulation cutoff: 1.25-fold
+# Regulation cutoff: 1.2-fold
 
   insert_head()
   
@@ -83,15 +83,16 @@
         clust_id = factor(clust_id, 
                           c('Collagen low', 
                             'Collagen int', 
-                            'Collagen hi')))
+                            'Collagen hi')), 
+        clust_id = droplevels(clust_id))
   
-# Serial ANOVA -------
+# Serial t test -------
   
   insert_msg('Serial testing')
   
   dge$test_results <- list(data = dge$analysis_tbl, 
                            variables = dge$variables) %>% 
-    pmap(test_anova, 
+    pmap(test_two_groups, 
          split_fct = 'clust_id', 
          type = 't', 
          adj_method = 'BH', 
@@ -101,107 +102,65 @@
   
   insert_msg('Annotation of the results')
   
-  for(i in names(dge$analysis_tbl)) {
-    
-    dge$test_results[[i]]$anova <- dge$test_results[[i]]$anova %>% 
-      mutate(gene_symbol = response, 
-             entrez_id = exchange(gene_symbol, 
-                                  dge$annotation[[i]], 
-                                  key = 'gene_symbol', 
-                                  value = 'entrez_id'))
-    
-    dge$test_results[[i]]$lm <- dge$test_results[[i]]$lm %>% 
-      mutate(gene_symbol = response, 
-             entrez_id = exchange(gene_symbol, 
-                                  dge$annotation[[i]], 
-                                  key = 'gene_symbol', 
-                                  value = 'entrez_id'))
-    
-    
-  }
+  dge$test_results <- 
+    map2(dge$test_results, 
+         dge$annotation, 
+         ~mutate(.x, 
+                 gene_symbol = response, 
+                 entrez_id = exchange(gene_symbol, 
+                                      .y, 
+                                      key = 'gene_symbol', 
+                                      value = 'entrez_id')))
+
 
 # Formatting the results and identifying differentially regulated genes ------
   
   insert_msg('Identification of differentially regulated genes')
   
-  dge$anova_signif_results <- dge$test_results %>% 
-    map(~.$anova) %>% 
-    map(filter, significant == 'yes')
+  # pFDR < 0.05 and at least weak regulation as assessed by Cohen's d
   
-  dge$lm_signif_results <- 
-    map2(map(dge$test_results, ~.x$lm), 
-         map(dge$anova_signif_results, ~.x$response), 
-         ~filter(.x, response %in% .y))
-  
-  ## indicating gene regulation sign
-  
-  dge$lm_signif_results <- dge$lm_signif_results %>% 
-    map(mutate, 
-        level = ifelse(level == '(Intercept)', 
-                       'Collagen low', 
-                       stri_extract(level, regex = 'Collagen.*$')), 
-        level = factor(level, 
-                       c('Collagen low', 'Collagen int', 'Collagen hi')), 
-        regulation = ifelse(significant == 'no', 
-                            'ns', 
-                            ifelse(estimate > log2(1.25), 
-                                   'upregulated', 
-                                   ifelse(estimate < -log2(1.25), 
-                                          'downregulated', 'ns'))), 
-        regulation = factor(regulation, c('upregulated', 'downregulated', 'ns')))
-  
-  ## identifying genes regulated between the clusters
-  
-  dge$dge_collagen_int <- dge$lm_signif_results %>% 
+  dge$test_results <- dge$test_results %>% 
+    map2(., dge$analysis_tbl, 
+         ~mutate(.x, 
+                 n = nrow(.y), 
+                 se = abs(estimate/stat), 
+                 sd = se * sqrt(n), 
+                 eff_size = abs(estimate/sd), 
+                 regulation = ifelse(significant == 'yes' & 
+                                       eff_size > 0.2, 
+                                     ifelse(estimate > 0, 
+                                            'upregulated', 'downregulated'), 
+                                     'ns'), 
+                 regulation = factor(regulation, 
+                                     c('upregulated', 'downregulated', 'ns')))) %>% 
     map(filter, 
-        level == 'Collagen int', 
-        regulation != 'ns')
+        !is.na(entrez_id), 
+        !is.na(regulation))
   
-  dge$dge_collagen_hi <- dge$lm_signif_results %>% 
+  ## significant results
+  
+  dge$signif_results <- dge$test_results %>% 
     map(filter, 
-        level == 'Collagen hi', 
         regulation != 'ns')
 
 # Extraction of the Entrez IDs and regulation vectors ------
   
-  insert_msg('Extracting the significxantly regulated genes')
+  insert_msg('Extracting the significantly regulated genes')
 
   ## Entrez IDs for the regulated genes
   
-  dge[c('entrez_collagen_int', 
-        'entrez_collagen_hi')] <- dge[c('dge_collagen_int', 
-                                        'dge_collagen_hi')] %>% 
-    map(map,~.x$entrez_id)
+  dge$dge_entrez <- dge$signif_results %>% 
+    map(~.x$entrez_id)
 
   ## regulation vectors
   
-  dge[c('regulation_int', 
-        'regulation_hi')] <- dge[c('dge_collagen_int', 
-                                   'dge_collagen_hi')] %>% 
-    map(map, ~set_names(.x$estimate, .x$entrez_id))
-  
+  dge$regulation_vectors <- dge$signif_results %>% 
+    map(~set_names(.x$estimate, .x$entrez_id))
+
   ## universe vectors
   
   dge$all_vectors <- dge$test_results %>% 
-    map(~.x$anova$entrez_id)
-  
-# Identification of the common regulated genes ------
-  
-  insert_msg('Common regulated genes')
-  
-  dge$entrez_common_int <- dge$entrez_collagen_int %>% 
-    reduce(intersect)
-  
-  dge$symbol_common_int <- dge$anova_signif_results$tcga %>% 
-    filter(entrez_id %in% dge$entrez_common_int) %>% 
-    .$gene_symbol
-  
-  dge$entrez_common_hi <- dge$entrez_collagen_hi %>% 
-    reduce(intersect)
-  
-  dge$symbol_common_hi <- dge$anova_signif_results$tcga %>% 
-    filter(entrez_id %in% dge$entrez_common_hi) %>% 
-    .$gene_symbol
+    map(~.x$entrez_id)
   
 # caching the results --------
   
@@ -210,7 +169,5 @@
   save(dge, file = './cache/dge.RData')
 
 # END -----
-  
-  rm(i)
   
   insert_tail()

@@ -23,19 +23,17 @@
   
   ## optimal clustering structure
 
-  coll_clust$clust_obj$tcga <- clust_dev$algos$pam_manhattan
+  coll_clust$clust_obj$tcga <- clust_dev$algos$pam_cosine
   
   ## renaming
   
   coll_clust$clust_obj$tcga$clust_assignment <- 
     coll_clust$clust_obj$tcga$clust_assignment  %>% 
     mutate(clust_id = car::recode(clust_id, 
-                                  "'1' = 'Collagen int'; 
-                                  '2' = 'Collagen hi'; 
-                                  '3' = 'Collagen low'"), 
+                                  "'1' = 'Collagen hi'; 
+                                  '2' = 'Collagen low'"), 
            clust_id = factor(clust_id, 
                              c('Collagen hi', 
-                               'Collagen int', 
                                'Collagen low')))
   
   ## tables used for the clustering structure assignment
@@ -69,10 +67,8 @@
   set.seed(12345)
   
   coll_clust$semi_clust <- 
-    list(newdata = coll_clust$clust_tbl[c('GSE16560', 
-                                          'GSE40272', 
-                                          'GSE70768', 
-                                          'GSE70769')]) %>% 
+    list(newdata = coll_clust$clust_tbl[c("GSE16560", "GSE70768", 
+                                          "GSE70769", "GSE116918")]) %>% 
     pmap(adapt_knn, 
          object = coll_clust$clust_obj$tcga, 
          type = 'propagation', 
@@ -80,14 +76,10 @@
          resolve_ties = TRUE, 
          max_kNN = 27)
   
-  coll_clust$clust_obj[c('GSE16560', 
-                          'GSE40272', 
-                          'GSE70768', 
-                          'GSE70769')] <- 
-    coll_clust$semi_clust[c('GSE16560', 
-                            'GSE40272', 
-                            'GSE70768', 
-                            'GSE70769')] %>% 
+  coll_clust$clust_obj[c("GSE16560", "GSE70768", 
+                         "GSE70769", "GSE116918")] <- 
+    coll_clust$semi_clust[c("GSE16560", "GSE70768", 
+                            "GSE70769", "GSE116918")] %>% 
     map(~.x$object)
   
   coll_clust$clust_obj <- coll_clust$clust_obj[names(coll_clust$clust_tbl)]
@@ -123,8 +115,8 @@
     scale_fill_manual(values = c(test = 'steelblue', 
                                  training = 'darkolivegreen4'), 
                       name = 'Cohort') + 
-    scale_x_continuous(limits = c(0, 0.53), 
-                       breaks = seq(0, 0.5, by = 0.1)) +
+    scale_x_continuous(limits = c(0, 0.58), 
+                       breaks = seq(0, 0.58, by = 0.1)) +
     globals$common_theme + 
     theme(axis.title.y = element_blank()) + 
     labs(title = 'Clustering variance', 
@@ -147,8 +139,9 @@
   ## n numbers to be displayed in the plot legends
   
   coll_clust$n_legends <- coll_clust$n_numbers %>% 
+    map(mutate, clust_id = stri_extract(clust_id, regex = 'low|hi')) %>% 
     map(~map2_chr(.x[[1]], .x[[2]], 
-              paste, sep = ', n = ')) %>% 
+              paste, sep = '\nn = ')) %>% 
     map2(., coll_clust$n_numbers, 
          ~set_names(.x, .y[[1]]))
   
@@ -169,7 +162,6 @@
     scale_x_discrete(labels = coll_clust$cohort_caps) + 
     scale_fill_manual(values = globals$cluster_colors, 
                       labels = c('Collagen hi' = 'hi', 
-                                 'Collagen int' = 'int', 
                                  'Collagen low' = 'low'), 
                       name = '') + 
     globals$common_theme + 
@@ -209,7 +201,8 @@
         with = 'data', 
         kdim = 2, 
         red_fun = 'umap', 
-        cust_theme = globals$common_theme)
+        cust_theme = globals$common_theme, 
+        random_state = 12345)
   
   ## MDS of the distance matrix
   
@@ -287,13 +280,13 @@
                                   variables = coll_clust$variables, 
                                   split_factor = 'clust_id', 
                                   what = 'eff_size', 
-                                  types = 'etasq', 
+                                  types = 'cohen_d', 
                                   ci = FALSE, 
                                   pub_styled = FALSE, 
                                   adj_method = 'BH'), 
                .options = furrr_options(seed = TRUE)) %>% 
     map(mutate, 
-        eff_size = paste('\u03B7\u00B2 =', signif(estimate, 2)), 
+        eff_size = paste(estimate_name, signif(estimate, 2), sep = ' = '), 
         plot_cap = paste(eff_size, significance, sep = ', '), 
         plot_lab = ifelse(p_adjusted < 0.05, 
                           paste0('<b><em>', variable, '</em></b>'), 
@@ -312,8 +305,7 @@
              mutate, clust_id = as.character(clust_id)), 
         ~full_rbind(tibble(variable = 'Samples, n', 
                            !!.y[[1]][1] := .y[[2]][1], 
-                           !!.y[[1]][2] := .y[[2]][2], 
-                           !!.y[[1]][3] := .y[[2]][3]), 
+                           !!.y[[1]][2] := .y[[2]][2]), 
                     .x))
   
   ## violin plots for single variables
@@ -350,23 +342,8 @@
   ## plotting order for the heat map is based on the effect size
   ## of the Collagen high vs Collagen low difference measured
   ## by Cohen's d
-  
-  coll_clust$two_test <- coll_clust$analysis_tbl %>% 
-    map(filter, clust_id %in% c('Collagen hi', 'Collagen low')) %>% 
-    map(mutate, clust_id = droplevels(clust_id)) %>% 
-    future_map(~compare_variables(.x, 
-                                  variables = coll_clust$variables, 
-                                  split_factor = 'clust_id', 
-                                  what = 'eff_size', 
-                                  types = 'cohen_d', 
-                                  ci = FALSE, 
-                                  pub_styled = FALSE, 
-                                  adj_method = 'BH'), 
-               .options = furrr_options(seed = TRUE))
-  
-  ## Heat map limits
-  
-  coll_clust$hm_limits <- coll_clust$two_test %>% 
+
+  coll_clust$hm_limits <- coll_clust$test %>% 
     map(arrange, estimate) %>% 
     map(~.$variable)
 
@@ -460,7 +437,16 @@
       mutate(variable = factor(variable, coll_clust$hm_limits[[i]]), 
              gene_group = stri_replace(gene_group, 
                                        fixed = ' ', 
-                                       replacement = '\n'))
+                                       replacement = '\n'), 
+             gene_group = stri_replace(gene_group, 
+                                       fixed = 'adhesion', 
+                                       replacement = 'Adh.'), 
+             gene_group = factor(gene_group, 
+                                 c('Pro', 
+                                   'ECM\ncomponent', 
+                                   'collagen\nmodification', 
+                                   'ECM\nprocessing', 
+                                   'Adh.')))
     
   }
   
@@ -476,7 +462,7 @@
   
   ## variables and the plotting order
   
-  coll_clust$mean_hm$plot_order <- coll_clust$two_test %>% 
+  coll_clust$mean_hm$plot_order <- coll_clust$test %>% 
     map(select, variable, estimate) %>% 
     compress(names_to = 'cohort') %>% 
     summarise(estimate = mean(estimate), .by = variable) %>% 
@@ -511,9 +497,13 @@
               by = 'variable') %>% 
     mutate(gene_group = stri_replace(gene_group, 
                                      fixed = ' ', 
-                                     replacement = '\n'))
+                                     replacement = '\n'), 
+           gene_group = stri_replace(gene_group, 
+                                     fixed = 'adhesion', 
+                                     replacement = 'Adh.'), 
+           gene_group = factor(gene_group, 
+                               levels = levels(coll_clust$ribbon_plots[[1]]$data$gene_group)))
     
-  
   ## heat map plot
   
   coll_clust$mean_hm$plot <- coll_clust$mean_hm$data %>% 
@@ -528,10 +518,11 @@
                          mid = 'black', 
                          high = 'firebrick', 
                          midpoint = 0, 
-                         limits = c(-1.5, 1.5), 
+                         limits = c(-1, 1), 
                          name = 'Mean Z-score', 
                          oob = scales::squish) + 
-    scale_x_discrete(labels = globals$study_labels) + 
+    scale_x_discrete(labels = globals$study_labels, 
+                     limits = names(globals$study_labels)) + 
     globals$common_theme + 
     theme(axis.title = element_blank(),
           axis.text.x = element_text(hjust = 1, 

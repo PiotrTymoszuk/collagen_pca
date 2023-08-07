@@ -17,7 +17,7 @@
   
   insert_msg('Globals')
 
-  ## infiltration variables, skipping the cytotoxicity score
+  ## infiltration variables
   
   clust_infil$variables[c('xcell', 'mcp')] <- 
     infil[c("xcell_types", "mcp_counter_types")]
@@ -27,7 +27,8 @@
   clust_infil$assignment <- coll_clust$assignment %>% 
     map(mutate, 
         clust_id = stri_extract(clust_id, regex = 'low|int|hi'), 
-        clust_id = factor(clust_id, c('low', 'int', 'hi')))
+        clust_id = factor(clust_id, c('low', 'int', 'hi')), 
+        clust_id = droplevels(clust_id))
   
   clust_infil$analysis_tbl$mcp <- clust_infil$assignment
   clust_infil$analysis_tbl$xcell <- clust_infil$analysis_tbl$mcp
@@ -72,13 +73,13 @@
                  .options = furrr_options(seed = TRUE)) %>% 
       map(reduce, left_join, by = 'variable') %>% 
       map(set_names, 
-          c('variable', levels(clust_infil$analysis_tbl[[1]][[1]]$clust_id)))
-    
+          c('variable', levels(clust_infil$assignment[[1]]$clust_id)))
+
   }
   
-# Kruskal-Wallis test ------
+# Mann-Whitney test ------
   
-  insert_msg('Kruskal-Wallis test')
+  insert_msg('Mann-whitney test')
   
   for(i in names(clust_infil$analysis_tbl)) {
     
@@ -87,7 +88,7 @@
                                     variables = clust_infil$variables[[i]][clust_infil$variables[[i]] %in% names(.x)], 
                                     split_factor = 'clust_id', 
                                     what = 'eff_size',
-                                    types = 'kruskal_eta', 
+                                    types = 'wilcoxon_r', 
                                     ci = FALSE, 
                                     exact = FALSE, 
                                     pub_styled = TRUE, 

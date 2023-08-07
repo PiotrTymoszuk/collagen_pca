@@ -54,23 +54,23 @@
   
   surv_multi$formulas$multi <- 
     list(GSE16560 = Surv(vitality_fup, death) ~ collagen_score + age + gleason_factor, 
-         GSE40272 = Surv(relapse_fup, relapse) ~ collagen_score + age + gleason_factor, 
          GSE70768 = Surv(relapse_fup, relapse) ~ collagen_score + age + gleason_factor, 
          GSE70769 = Surv(relapse_fup, relapse) ~ collagen_score + gleason_factor, 
+         GSE116918 = Surv(relapse_fup, relapse) ~ collagen_score + age + gleason_factor,
          tcga = Surv(relapse_fup, relapse) ~ collagen_score + age + gleason_factor)
   
   surv_multi$formulas$uni <- 
     list(GSE16560 = Surv(vitality_fup, death) ~ collagen_score, 
-         GSE40272 = Surv(relapse_fup, relapse) ~ collagen_score, 
          GSE70768 = Surv(relapse_fup, relapse) ~ collagen_score, 
          GSE70769 = Surv(relapse_fup, relapse) ~ collagen_score, 
+         GSE116918 = Surv(relapse_fup, relapse) ~ collagen_score, 
          tcga = Surv(relapse_fup, relapse) ~ collagen_score)
   
   surv_multi$formulas$clinical <- 
     list(GSE16560 = Surv(vitality_fup, death) ~ age + gleason_factor, 
-         GSE40272 = Surv(relapse_fup, relapse) ~ age + gleason_factor, 
          GSE70768 = Surv(relapse_fup, relapse) ~ age + gleason_factor, 
          GSE70769 = Surv(relapse_fup, relapse) ~ gleason_factor, 
+         GSE116918 = Surv(relapse_fup, relapse) ~ age + gleason_factor, 
          tcga = Surv(relapse_fup, relapse) ~ age + gleason_factor)
   
   ## model colors and labels

@@ -2,7 +2,7 @@
 # in the Recon2 BiGG model. 
 # SEM brought back to the linear scale (from log2) by the first-differential 
 # equation log(2) * SEM(log2-Expression) * 2^log2-Expression
-# No multiple-testing correction!!!
+# FDR multiple testing correction
 
   insert_head()
   
@@ -18,18 +18,10 @@
   ## annotation with Entrez ID
   
   meta$analysis_tbl <- dge$test_results %>% 
-    map(~.x$lm) %>% 
-    map(filter, level != '(Intercept)') %>% 
     map(mutate, 
-        level = stri_extract(level, regex = 'int|hi'), 
-        level = factor(level, c('int', 'hi')), 
         se = log(2) * se * 2^estimate, 
         estimate = 2^estimate) %>% 
-    map(~.x[c('level', 'gene_symbol', 'entrez_id', 'estimate', 'se')])
-
-  meta$analysis_tbl <- meta$analysis_tbl %>% 
-    map(blast, level) %>% 
-    transpose
+    map(~.x[c('gene_symbol', 'entrez_id', 'estimate', 'se')])
 
 # construction of the models ------
   
@@ -37,7 +29,7 @@
   
   set.seed(1234)
   
-  meta$models$int <- meta$analysis_tbl$int %>% 
+  meta$models <- meta$analysis_tbl %>% 
     map(~build_geneSBML(x = set_names(.x$estimate, .x$entrez_id), 
                         err = set_names(.x$se, .x$entrez_id), 
                         database = Recon2D, 
@@ -45,19 +37,7 @@
                         and_fun = 'min', 
                         x_default = 1, 
                         err_method = 'mc', 
-                        n_iter = 1010, 
-                        ci_method = 'bca', 
-                        .parallel = TRUE))
-  
-  meta$models$hi <- meta$analysis_tbl$hi %>% 
-    map(~build_geneSBML(x = set_names(.x$estimate, .x$entrez_id), 
-                        err = set_names(.x$se, .x$entrez_id), 
-                        database = Recon2D, 
-                        or_fun = 'mean', 
-                        and_fun = 'min', 
-                        x_default = 1, 
-                        err_method = 'mc', 
-                        n_iter = 1010, 
+                        n_iter = 2010, 
                         ci_method = 'bca', 
                         .parallel = TRUE))
   
@@ -65,38 +45,30 @@
   
   insert_msg('Significantly regulated reactions')
   
+  ## regulation: log-fold as well!
+  
   meta$regulation <- meta$models %>% 
-    map(map, components, 'regulation') %>% 
-    map(map, 
-        mutate, 
-        significant = ifelse(p_adjusted < 0.05, 'yes', 'no'), 
+    map(components, 'regulation') %>% 
+    map(mutate, 
+        significant = ifelse(p_adjusted < 0.05, 'yes', 'no'),
         regulation = ifelse(significant == 'no', 
                             'ns', 
                             ifelse(fold_reg > 1, 'activated', 
                                    ifelse(fold_reg < 1, 'inhibited', 'ns'))), 
-        regulation = factor(regulation, c('activated', 'inhibited', 'ns')))
+        regulation = factor(regulation, c('activated', 'inhibited', 'ns'))) %>% 
+    map(mutate, 
+        log_fold_reg = log2(fold_reg), 
+        log_lower_ci = log2(lower_ci), 
+        log_upper_ci = log2(upper_ci))
+
+  ## significant reactions
   
   meta$signif_reactions <- meta$regulation %>% 
-    map(map, filter, regulation != 'ns') %>% 
-    map(map, blast, regulation) %>% 
-    map(map, map, ~.x$react_id)
+    map(filter, regulation != 'ns') %>% 
+    map(blast, regulation) %>% 
+    map(map, ~.x$react_id) %>% 
+    transpose
 
-# Identification of significant reactions common for all studies -----
-  
-  insert_msg('Common significant reactions')
-  
-  ## all cohorts except of GSE40272, where no significant regulation
-  ## was found
-  
-  for(i in names(meta$signif_reactions)) {
-    
-    meta$common_reactions[[i]] <- 
-      meta$signif_reactions[[i]][c('GSE16560', 'GSE70768', 'GSE70769', 'tcga')] %>% 
-      transpose %>% 
-      map(reduce, intersect)
-    
-  }
-  
 # caching the results --------
   
   insert_msg('Caching the results')
@@ -104,7 +76,5 @@
   save(meta, file = './cache/meta.RData')
   
 # END -----
-  
-  rm(i)
   
   insert_tail()

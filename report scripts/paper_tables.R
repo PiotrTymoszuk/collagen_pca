@@ -22,24 +22,33 @@
                             'percentages of categories within the', 
                             'complete observation set.'))
   
-# Table 2: collagen genes of interest -----
+# Table S1: collagen genes of interest -----
   
-  insert_msg('Table 2: collagen genes of interest')
+  insert_msg('Table S1: collagen genes of interest')
   
-  paper_tbl$genes <- globals$genes_interest %>% 
+  suppl_paper_tbl$genes <- globals$genes_interest %>% 
     mutate(entrez_id = mapIds(org.Hs.eg.db, 
                               keys = gene_symbol, 
                               column = 'ENTREZID', 
-                              keytype = 'SYMBOL')) %>% 
-    set_names(c('Gene symbol', 'Entrez ID', 'Gene group')) %>% 
-    mdtable(label = 'table_2_genes', 
+                              keytype = 'SYMBOL'),
+           gene_group = car::recode(gene_group, "'Pro' = 'proline turnover'"), 
+           gene_group = factor(gene_group, 
+                               c('proline turnover', 
+                                 'collagen modification', 
+                                 'ECM component', 
+                                 'ECM processing', 
+                                 'adhesion'))) %>% 
+    arrange(gene_group) %>% 
+    select(gene_group, gene_symbol, entrez_id) %>% 
+    set_names(c('Gene group', 'Gene symbol', 'Entrez ID')) %>% 
+    mdtable(label = 'table_s2_genes', 
             ref_name = 'genes', 
-            caption = paste('Collagen genes of interest', 
-                            'and their classification.'))
+            caption = paste('Investigated collagen pathway genes and', 
+                            'their classification.'))
   
-# Table S1: normal-tumor ------
+# Table S2: normal-tumor ------
   
-  insert_msg('Table S1: normal - tumor')
+  insert_msg('Table S2: normal - tumor')
   
   suppl_paper_tbl$norm_tumor <- 
     map2(norm_tumor$stats, 
@@ -57,7 +66,7 @@
     select(cohort, variable, tumor, benign, significance, est_lab) %>% 
     set_names(c('Cohort', 'Variable', 'Tumor', 'Benign', 
                 'Significance', 'Effect size')) %>% 
-    mdtable(label = 'table_s1_normal_tumor', 
+    mdtable(label = 'table_s2_normal_tumor', 
             ref_name = 'norm_tumor', 
             caption = paste("Expression of the collagen pathway genes", 
                             "in the malignant and benign tissue compared", 
@@ -71,26 +80,26 @@
                             "The table is available as a supplementary", 
                             "Excel file."))
   
-# Table S2: expression of the collagen pathway genes in the clusters -------
+# Table S3: expression of the collagen pathway genes in the clusters -------
   
-  insert_msg('Table S2: collagen gene expression in the clusters')
+  insert_msg('Table S3: collagen gene expression in the clusters')
   
   suppl_paper_tbl$cluster <- coll_clust$result_tbl %>% 
     compress(names_to = 'cohort') %>% 
     mutate(cohort = globals$study_labels[cohort]) %>% 
     select(cohort, variable, 
-           `Collagen low`, `Collagen int`, `Collagen hi`, 
+           `Collagen low`, `Collagen hi`, 
            significance, eff_size) %>% 
     set_names(c('Cohort', 'Variable', 
-                'Collagen low', 'collagen intermediate', 'Collagen high', 
+                'Collagen low', 'Collagen high', 
                 'Significance', 'Effect size')) %>% 
-    mdtable(label = 'table_s2_cluster_collagen_genes', 
+    mdtable(label = 'table_s3_cluster_collagen_genes', 
             ref_name = 'cluster', 
             caption = paste("Expression of the cluster-defining", 
                             "collagen pathway genes in the collagen clusters", 
                             "of prostate cancer.", 
-                            "Statistical significance was assessed by one-way", 
-                            "ANOVA with eta-squared effect size statistic.", 
+                            "Statistical significance was assessed by two-tailed", 
+                            "T test with Cohen's d effect size statistic.", 
                             "P values were corrected for multiple testing", 
                             "with the false discovery rate method.", 
                             "log2-transformed expression values are presented", 
@@ -99,19 +108,19 @@
                             "The table is available as a supplementary", 
                             "Excel file."))
   
-# Table S3: clinical characteristic of the collagen clusters -----
+# Table S4: clinical characteristic of the collagen clusters -----
   
-  insert_msg('Table S3: Clinical characteristic of the clusters')
+  insert_msg('Table S4: Clinical characteristic of the clusters')
   
   suppl_paper_tbl$clinic <- cs_cluster$result_tbl %>% 
     compress(names_to = 'cohort') %>% 
     mutate(cohort = globals$study_labels[cohort]) %>% 
     filter(variable != 'Collagen Score') %>% 
-    select(cohort, variable, low, int, hi, significance, eff_size) %>% 
+    select(cohort, variable, low, hi, significance, eff_size) %>% 
     set_names(c('Cohort', 'Variable', 
-                'Collagen low', 'Collagen intermediate', 'Collagen high', 
+                'Collagen low', 'Collagen high', 
                 'Significance', 'Effect size')) %>% 
-    mdtable(label = 'table_s3_cluster_clinical_characteristic', 
+    mdtable(label = 'table_s4cluster_clinical_characteristic', 
             ref_name = 'clinic',
             caption = paste('Clinical characteristic of the collagen clusters.', 
                             'Numeric variables are presented as medians', 
@@ -140,9 +149,9 @@
       mutate(cohort = globals$study_labels[cohort]) %>% 
       format_summ_tbl %>% 
       select(cohort, variable, 
-             low, int, hi, significance, eff_size) %>% 
+             low, hi, significance, eff_size) %>% 
       set_names(c('Cohort', 'Variable', 
-                  'Collagen low', 'Collagen int', 'Collagen high', 
+                  'Collagen low', 'Collagen high', 
                   'Significance', 'Effect size'))
     
   }
@@ -153,49 +162,44 @@
          label = c('table_s4_mcp_counter_infiltration', 
                    'table_s5_xcell_infiltration'), 
          ref_name = names(.),
-         caption = paste(c('Non-malignant cell numbers predicted for the collagen', 
-                           'clusters by the MCP counter algorithm.'), 
-                         c('Non-maignant cell fractions predicted for the collagen', 
-                           'clusters by the xCell algorithm.'), 
-                         'Statistical significance was assessed by Kruskal-Wallis',
-                         'test with eta-squared effect size statistic.', 
-                         'P values were corrected for multiple testing with the', 
-                         'false discovery method.', 
-                         'The table is available as a supplementary Excel file.')) %>% 
+         caption = map(list(paste('Non-malignant cell numbers predicted for the collagen', 
+                                  'clusters by the MCP counter algorithm.'), 
+                            paste('Non-maignant cell fractions predicted for the collagen', 
+                                  'clusters by the xCell algorithm.')), 
+                       ~paste(.x, 
+                              'Statistical significance was assessed by Mann-Whitney',
+                              'test with r effect size statistic.', 
+                              'P values were corrected for multiple testing with the', 
+                              'false discovery method.', 
+                              'The table is available as a supplementary Excel file.'))) %>% 
     pmap(mdtable)
   
 # Table S6: GSVA ------
   
   insert_msg('Table S6: GSVA')
   
-  suppl_paper_tbl$gsva <- 
-    dge_gsva$lm_signif %>% 
-    map_dfr(map_dfr, 
-            compress, 
-            names_to = 'cohort') %>% 
-    filter(response %in% unique(unlist(dge_gsva$cmm_signatures))) %>% 
-    left_join(compress(dge_gsva$eff_size, 
-                       names_to = 'cohort'), 
-              by = c('response', 'cohort')) %>% 
+  suppl_paper_tbl$gsva <- dge_gsva$test %>% 
+    map(filter, response %in% unique(unlist(dge_gsva$cmm_signatures))) %>% 
+    map2(., names(.), ~mutate(.x, cohort = globals$study_labels[.y])) %>% 
+    do.call('rbind', .) %>% 
     left_join(set_names(dge_gsva$hm_plot$sign_classes, 
                         c('response', 'class')), 
               by = 'response') %>% 
     mutate(cohort = globals$study_labels[cohort], 
            response = exchange(response, 
-                               reactome$lexicon), 
-           level = as.character(level),
-           level = paste('Collagen', level, 'vs low'),
+                               reactome$lexicon),
            class = stri_replace_all(class, 
                                     fixed = '\n', 
                                     replacement = ', ')) %>% 
-    select(cohort, class, response, level, regulation, 
+    select(cohort, class, response, regulation, 
            estimate, lower_ci, upper_ci, 
-           p_adjusted, eta_sq) %>% 
+           p_adjusted, eff_size) %>% 
     map_dfc(function(x) if(is.numeric(x)) signif(x, 3) else x) %>% 
     arrange(cohort, class, response) %>% 
-    set_names(c('Cohort', 'Signature class', 
-                'Signature', 'Comparison', 
-                "Regulation", 
+    set_names(c('Cohort', 
+                'Signature class', 
+                'Signature', 
+                "Regulation, collagen high vs low", 
                 'Fold-regulation', 
                 'lower 95% CI', 
                 'upper 95% CI', 
@@ -205,14 +209,13 @@
             ref_name = 'gsva', 
             caption = paste("Gene set variation", 
                             "analysis with the Reactome pathway gene signatures.", 
-                            "Differences between the collagen intermediate", 
-                            "or high clusters versus collagen low cancers", 
-                            "were investigated by one-way ANOVA with", 
-                            "eta-squared effect size statistic and linear", 
-                            "modeling.", 
+                            "Differences in ssGSEA scores between collagen high", 
+                            "and collagen low cancers were investigated by", 
+                            "two-tailed T test with Cohen's d effect", 
+                            "size statistic.", 
                             "Results for signatures significantly regulated",
                             "with moderate-to-large effect size", 
-                            "(eta-squared at leat 0.06) in at least four", 
+                            "(d at least 0.5) in at least four", 
                             "cohorts are presented.", 
                             "P values were corrected for multiple testing with",
                             "the false discovery rate method (FDR).", 
@@ -223,10 +226,9 @@
   
   insert_msg('Table S7: differential gene expression')
   
-  suppl_paper_tbl$dge <- dge[c("dge_collagen_int", "dge_collagen_hi")] %>% 
-    map_dfr(compress, names_to = 'cohort') %>% 
-    mutate(cohort = globals$study_labels[cohort], 
-           level = paste(level, 'vs low')) %>% 
+  suppl_paper_tbl$dge <- dge$signif_results %>% 
+    compress(names_to = 'cohort') %>% 
+    mutate(cohort = globals$study_labels[cohort]) %>% 
     select(cohort, 
            gene_symbol, 
            entrez_id, 
@@ -234,23 +236,26 @@
            estimate, 
            lower_ci, 
            upper_ci, 
-           p_adjusted) %>% 
+           p_adjusted, 
+           eff_size) %>% 
     map_dfc(function(x) if(is.numeric(x)) signif(x, 3) else x) %>% 
     set_names(c('Cohort', 
                 'Gene symbol', 
                 'Entrez ID', 
                 'Regulation', 
-                'log2 fold-regulation', 
+                'log2 fold-regulation, collagen high vs low', 
                 'lower 95% CI', 
                 'upper 95% CI', 
-                'pFDR')) %>% 
+                'pFDR', 
+                'Effect size')) %>% 
     mdtable(label = 'table_s4_clusters_differential_gene_expression', 
             ref_name = 'dge', 
             caption = paste('Genes differentially expressed in the collagen', 
-                            'intermediate or high cluster as compared', 
+                            'high cluster as compared', 
                             'with collagen low cancers were identified', 
-                            'by one-way ANOVA and linear modeling', 
-                            'with the 1.25-fold regulation cutoff', 
+                            'by two-tailed T test', 
+                            "with the 1.25-fold regulation cutoff and", 
+                            "the Cohen's d effect size statistic of 0.2", 
                             'P values were corrected for multiple testing with', 
                             'the false discovery rate method (FDR).', 
                             'The table is available as a supplementary', 
@@ -261,23 +266,24 @@
   insert_msg('Table S8: signaling')
   
   suppl_paper_tbl$signaling <- dge_spia$test %>% 
-    map(compress, names_to = 'cohort') %>% 
     map(filter, Name %in% unique(unlist(dge_spia$common))) %>% 
-    compress(names_to = 'level') %>% 
+    compress(names_to = 'cohort') %>% 
     mutate(cohort = globals$study_labels[cohort], 
-           level = paste('Collagen', level, 'vs low'), 
            pGFDr = ifelse(pGFdr < 0.05, 
                           paste('p =', signif(pGFdr, 2)), 
                           paste0('ns (p = ', signif(pGFdr, 2), ')'))) %>% 
-    select(cohort, Name, ID, level, Status, tA, pGFdr) %>% 
-    set_names(c('Cohort', 'Pathway name', 'KEGG ID', 
-                'Comparison', 'Activation status', 
-                'Regulation, tA', 'Significance, pGFDR')) %>% 
+    select(cohort, Name, ID, Status, tA, pGFdr) %>% 
+    set_names(c('Cohort', 
+                'Pathway name', 
+                'KEGG ID', 
+                'Activation status', 
+                'Regulation, collagen high vs low, tA', 
+                'Significance, pGFDR')) %>% 
     mdtable(label = 'table_s8_clusters_signaling_pathways', 
             ref_name = 'signaling',
             caption = paste('Signaling pathway activity in the collagen', 
                             'clusters investigated by the SPIA algorithm.', 
-                            'Resulat for signaling pathways significantly', 
+                            'Results for signaling pathways significantly', 
                             'activated or inhibited in at least four cohorts', 
                             'are shown.', 
                             'The table is available as a supplementary', 
@@ -287,31 +293,24 @@
   
   insert_msg('Table S9: Biochemical reactions')
   
-  suppl_paper_tbl$reactions <- 
-    meta$models %>% 
-    map(map, components, 'regulation') %>% 
-    map(map, filter, p_adjusted < 0.05) %>% 
-    map(map, function(x) if(nrow(x) == 0) NULL else x) %>% 
-    map(compact) %>% 
-    map(map, 
-        mutate, 
+  suppl_paper_tbl$reactions <- meta$models %>% 
+    map(components, 'regulation') %>% 
+    map(filter, 
+        p_adjusted < 0.05, 
+        fold_reg != 1) %>% 
+    map(mutate, 
         react_name = annotate_bigg(react_id, 
                                    value = 'name', 
                                    annotation_db = Recon2D), 
         react_name = unlist(react_name)) %>% 
-    map(compress, names_to = 'cohort') %>% 
-    compress(names_to = 'level') %>% 
-    filter(p_adjusted < 0.05, 
-           fold_reg != 1) %>% 
+    compress(names_to = 'cohort') %>% 
     mutate(cohort = globals$study_labels[cohort], 
-           status = ifelse(fold_reg > 1, 'activated', 'inhibited'), 
-           level = paste('Collagen', level, 'vs low')) %>% 
+           status = ifelse(fold_reg > 1, 'activated', 'inhibited')) %>% 
     map_dfc(function(x) if(is.numeric(x)) signif(x, 3) else x) %>% 
     select(cohort, 
            subsystem,
            react_id, 
            react_name,
-           level, 
            status, 
            fold_reg, 
            lower_ci, 
@@ -321,9 +320,8 @@
                 'Recon subsystem', 
                 'BIGG ID', 
                 'Reaction name', 
-                'Comparison', 
-                'Activation status', 
-                'Fold-regulation', 
+                'Activation status, collagen high vs low', 
+                'Fold-regulation, collagen high vs low', 
                 'lower 95% CI', 
                 'upper 95% CI', 
                 'pFDR')) %>% 
@@ -331,10 +329,9 @@
             ref_name = 'reactions',
             caption = paste('Biochemical reactions predicted to be', 
                             'significantly activated in the collagen high', 
-                            'or collagen low cluster as compared', 
-                            'with collagen low cancers.', 
+                            'as compared with collagen low cancers.', 
                             'Statistical significance was determined by', 
-                            'Monte Carlo simulation.', 
+                            'a Monte Carlo simulation.', 
                             'P values were corrected for multiple testing with', 
                             'the false discovery rate method.', 
                             'The table is available as a supplementary', 
@@ -345,16 +342,13 @@
   insert_msg('Table S10: biochemical subsystems')
   
   suppl_paper_tbl$subsystems <- meta_sub$test %>% 
-    map(map, filter, status != 'regulated') %>% 
-    map(map, select, -eff_size) %>% 
-    map(compress, names_to = 'cohort') %>% 
-    compress(names_to = 'level') %>% 
+    map(filter, status != 'regulated') %>% 
+    map(select, -eff_size) %>% 
+    compress(names_to = 'cohort') %>% 
     mutate(cohort = globals$study_labels[cohort], 
            OR = signif(OR, 2), 
-           p_adjusted = signif(p_adjusted, 2), 
-           level = paste('Collagen', level, 'vs low')) %>% 
+           p_adjusted = signif(p_adjusted, 2)) %>% 
     select(cohort, 
-           level, 
            subsystem, 
            status, 
            n, 
@@ -364,12 +358,11 @@
            OR, 
            p_adjusted) %>% 
     set_names(c('Cohort', 
-                'Comparison', 
                 'Recon subsystem', 
-                'Activation status', 
+                'Activation status, collagen high vs low', 
                 'Regulated reaction in the subsystem', 
                 'Total reactions in the subsystem', 
-                'Total regulated reactions', 
+                'Total regulated reactions, collagen high vs low', 
                 'Total reactions', 
                 'Odds ratio', 
                 'pFDR')) %>% 

@@ -75,7 +75,7 @@
   ## test
   
   clust_surv$test <- clust_surv$survfit_obj %>% 
-    map(map, surv_pvalue) %>% 
+    map(map, surv_pvalue, method = 'S1') %>% 
     map(compress, names_to = 'cohort') %>% 
     compress(names_to = 'comparison') %>% 
     mutate(comparison = factor(comparison, c('overall', 'hi_lo'))) %>% 
@@ -95,7 +95,7 @@
   insert_msg('KM plots')
 
   clust_surv$km_plots <- list(fit = clust_surv$survfit_obj$overall, 
-                              pval = clust_surv$km_p_labs, 
+                              pval = clust_surv$test$overall$significance, 
                               title = paste('Collagen clusters and survival,', 
                                             globals$study_labels[names(clust_surv$analysis_tbl)]), 
                               xlab = c('Overall survival, months', 

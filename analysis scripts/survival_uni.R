@@ -83,9 +83,9 @@
   
   surv_cox$formulas <- 
     c(GSE16560 = 'Surv(vitality_fup, death)', 
-      GSE40272 = 'Surv(relapse_fup, relapse)', 
-      GSE70768 = 'Surv(relapse_fup, relapse)',
-      GSE70769 = 'Surv(relapse_fup, relapse)', 
+      GSE70768 = 'Surv(relapse_fup, relapse)', 
+      GSE70769 = 'Surv(relapse_fup, relapse)',
+      GSE116918 = 'Surv(relapse_fup, relapse)', 
       tcga = 'Surv(relapse_fup, relapse)') %>% 
     map(function(response) surv_cox$variables %>% 
           map(~paste(response, .x, sep = ' ~ ')) %>% 
@@ -217,7 +217,7 @@
            labs(title = paste('Inference,', y), 
                 subtitle = paste0(resp, ', univariable Cox modeling, ', z), 
                 x = paste('HR \u00B1 95%CI, normalized')))
-  
+
 # END -----
   
   plan('sequential')

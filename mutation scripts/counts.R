@@ -51,7 +51,7 @@
     compare_variables(variables = mut_counts$lexicon$variable, 
                       split_factor = 'clust_id', 
                       what = 'eff_size', 
-                      types = 'kruskal_etasq', 
+                      types = 'wilcoxon_r', 
                       exact = FALSE, 
                       ci = FALSE, 
                       pub_styled = TRUE, 

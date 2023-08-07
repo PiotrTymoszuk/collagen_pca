@@ -8,6 +8,7 @@
   library(trafo)
   library(rlang)
   library(stringi)
+  library(readxl)
 
   library(ggtext)
   library(ggrepel)
@@ -62,9 +63,26 @@
   ## and infiltration
   
   c('./analysis scripts/collagen_score.R', ## development and properties of the Collagen Score
-    './analysis scripts/collagen_score_plots.R', ## graphs for features of the Collagen Score
-    './analysis scripts/clinic.R', ## Collagen genes and Collagen Score as a function of clinical features
-    './analysis scripts/survival_uni.R', ## Uni-variable Cox modeling of survival
+    './analysis scripts/collagen_score_plots.R') %>% ## graphs for features of the Collagen Score
+    source_all(message = TRUE, crash = TRUE) %>% 
+    print
+  
+  if(file.exists('./cache/coll_clinic.RData')) {
+    
+    insert_msg('Loading cached clinical association results')
+  
+    load('./cache/coll_clinic.RData')
+    
+  } else {
+    
+    ## Collagen genes and Collagen Score as a function of clinical features
+    
+    c('./analysis scripts/clinic.R') %>% 
+      source_all(message = TRUE, crash = TRUE)
+    
+  }
+  
+  c('./analysis scripts/survival_uni.R', ## Uni-variable Cox modeling of survival
     './analysis scripts/survival_cut.R', ## survival in dichotomous collagen gene and Collagen Score strata
     './analysis scripts/survival_multi.R', ## multi-variable survival modeling, Collagen Score
     './analysis scripts/collagen_score_infiltration.R') %>% ## correlation of the Collagen Score and non-malignant cell infiltration)
@@ -75,7 +93,7 @@
   
   c('./analysis scripts/clust_devel.R', ## development of the collagen clusters
     './analysis scripts/collagen_clustering.R', ## semi-supervised clustering
-    './analysis scripts/collagen_cluster_survival.R', ## diffferences in survival between the Collagen Clusters
+    './analysis scripts/collagen_cluster_survival.R', ## differences in survival between the Collagen Clusters
     './analysis scripts/collagen_cluster_clinic.R', ## differences in clinics and Collagen score between the clusters
     './analysis scripts/collagen_cluster_infiltration.R') %>% ## infiltration in the clusters
     source_all(message = TRUE, crash = TRUE) %>% 

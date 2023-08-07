@@ -179,7 +179,7 @@
   ## mutations: present in at least 2% of participants
   ## CNV: at least 10% of participants
   ## amplifications: at least 4% of participants
-  ## deletions: at least 10% of particiants
+  ## deletions: at least 10% of participants
   
   mut_tables$top[c('mutations', 
                    'cnv', 

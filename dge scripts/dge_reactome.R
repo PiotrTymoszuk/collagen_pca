@@ -39,104 +39,63 @@
   
   insert_msg('Testing')
   
-  ## one-way ANOVA: the ssGSVA scores have usually a nice normal distribution
+  ## two-tailed T test: the ssGSVA scores have usually
+  ## a nice normal distribution
+  ## computation of Cohen's d used later for selection of common significant
+  ## signatures and plot ordering
   
   dge_gsva$test <- dge_gsva$analysis_tbl %>% 
-    future_map(test_anova, 
+    future_map(test_two_groups,
+               type = 't', 
                split_fct = 'clust_id', 
                variables = dge_gsva$lexicon$variable, 
                adj_method = 'BH', 
                .parallel = FALSE, 
-               .options = furrr_options(seed = TRUE))
+               .options = furrr_options(seed = TRUE)) %>% 
+    map2(., dge_gsva$analysis_tbl, 
+         ~mutate(.x,  
+                 n = nrow(.y), 
+                 se = abs(estimate/stat), 
+                 sd = se * sqrt(n), 
+                 eff_size = abs(estimate/sd), 
+                 eff_size_desc = interpret_cohens_d(eff_size), 
+                 regulation = ifelse(significant == 'yes' & 
+                                       eff_size > 0.3, 
+                                     ifelse(estimate > 0, 
+                                            'upregulated', 'downregulated'), 
+                                     'ns'), 
+                 regulation = factor(regulation, 
+                                     c('upregulated', 'downregulated', 'ns'))))
+         
+# Significant and common signatures ------
   
-# Effect size computation ------
+  insert_msg('Significant and common significant signatures')
   
-  insert_msg('Eta-squared')
+  ## pFDR < 0.05 and at least small effect size
   
-  for(i in names(dge_gsva$analysis_tbl)) {
-    
-    dge_gsva$eff_size[[i]] <- dge_gsva$lexicon$variable %>% 
-      future_map_dbl(get_etasq, 
-                     split_factor = 'clust_id', 
-                     data = dge_gsva$analysis_tbl[[i]], 
-                     .options = furrr_options(seed = TRUE))
-    
-  }
-  
-  ## formatting the results
-  ## significant effect is defined as eta^2 >= 0.06
-  ## (moderate effect)
-  
-  dge_gsva$eff_size <- dge_gsva$eff_size %>% 
-    map(set_names, dge_gsva$lexicon$variable) %>% 
-    map(compress, 
-        names_to = 'response', 
-        values_to = 'eta_sq') %>% 
-    map(mutate, 
-        significant = ifelse(eta_sq >= 0.06, 'yes', 'no'))
-  
-# Significance in ANOVA ------
-  
-  insert_msg('Significance in ANOVA')
-  
-  ## pFDR < 0.05 and large effect size
-  
-  dge_gsva$anova_signif <- 
-    list(anova = dge_gsva$test %>% 
-           map(~.x$anova), 
-         eff_size = dge_gsva$eff_size) %>% 
-    map(map, 
-        filter, 
-        significant == 'yes') %>% 
-    map(map, ~.x$response)
-
-  dge_gsva$anova_signif <- 
-    map2(dge_gsva$anova_signif$anova, 
-         dge_gsva$anova_signif$eff_size, 
-         intersect)
-  
-# Significant for the clusters as compared with the collagen low subset ------
-  
-  insert_msg('Comparison between the clusters')
-  
-  dge_gsva$lm_signif <- dge_gsva$test %>% 
-    map(~.x$lm) %>% 
+  dge_gsva$significant <- dge_gsva$test %>% 
     map(filter, 
-        level != '(Intercept)', 
-        significant == 'yes') %>% 
-    map2(., dge_gsva$anova_signif, 
-         ~filter(.x, response %in% .y)) %>% 
-    map(mutate, 
-        regulation = ifelse(estimate > 0, 'upregulated', 'downregulated'), 
-        regulation = factor(regulation, c('upregulated', 'downregulated')), 
-        level = stri_extract(level, regex = 'int|hi'), 
-        level = factor(level, c('int', 'hi'))) %>% 
-    map(blast, level) %>% 
-    transpose %>% 
-    map(map, blast, regulation) %>% 
-    map(transpose)
+        regulation != 'ns') %>% 
+    map(mutate, regulation = droplevels(regulation)) %>% 
+    map(blast, regulation) %>% 
+    map(map, ~.x$response) %>% 
+    transpose
   
-# Common significantly regulated signatures -----
-  
-  insert_msg('Commmon significantly regulated signatures')
-  
-  ## up- or downregulated in at least four cohorts
+  ## common signatures: up- or down-regulated in at least four cohorts
   
   dge_gsva$cmm_sets <- names(dge_gsva$analysis_tbl) %>% 
     combn(m = 4, simplify = FALSE)
   
-  for(i in names(dge_gsva$lm_signif)) {
+  for(i in names(dge_gsva$significant)) {
     
-    dge_gsva$cmm_signatures[[i]] <- dge_gsva$lm_signif[[i]] %>% 
-      map(function(reg) dge_gsva$cmm_sets %>% 
-            map(~reg[.x]) %>% 
-            map(map, ~.x$response) %>% 
-            map(reduce, intersect) %>% 
-            reduce(union))
+    dge_gsva$cmm_signatures[[i]] <- dge_gsva$cmm_sets %>% 
+      map(~dge_gsva$significant[[i]][.x]) %>% 
+      map(reduce, intersect) %>% 
+      reduce(union)
     
   }
   
-# Heat map plots ------
+# Heat map plot ------
   
   insert_msg('Heat map of the means')
   
@@ -168,7 +127,7 @@
     mutate(class = stri_replace_all(class, fixed = '/', replacement = '\n'), 
            class = stri_replace_all(class, fixed = ' ', replacement = '\n'), 
            class = factor(class, 
-                          c('ECM\ncollagen', 
+                          c('ECM\ncollagen\ncytoskeleton', 
                             'adhesion\nmotility\nscavenging', 
                             'angiogenesis\ndevelopment\nhemostasis', 
                             'GF\nsignaling',
@@ -186,31 +145,30 @@
   ## and ANOVA p values
   
   dge_gsva$hm_plot$data <- dge_gsva$hm_plot$data %>% 
-    left_join(compress(dge_gsva$eff_size, names_to = 'cohort') %>% 
-                mutate(variable = response), 
-              by = c('variable', 'cohort')) %>% 
-    left_join(map(dge_gsva$test, 
-                  ~.x$anova[c('response', 'p_value')]) %>% 
+    left_join(dge_gsva$test %>% 
+                map(~.x[c('response', 'p_adjusted', 'eff_size')]) %>% 
                 compress(names_to = 'cohort') %>% 
                 mutate(variable = response), 
               by = c('variable', 'cohort'))
-  
+
   ## heat map
   
   dge_gsva$hm_plot$plot <- dge_gsva$hm_plot$data %>% 
     ggplot(aes(x = cohort, 
-               y = reorder(sign_label, eta_sq), 
+               y = reorder(sign_label, eff_size), 
                fill = mean_score)) + 
     geom_tile() + 
     facet_grid(class ~ clust_id, 
                scales = 'free', 
                space = 'free') +
-    scale_x_discrete(labels = globals$study_labels) + 
+    scale_x_discrete(labels = globals$study_labels, 
+                     limits = names(dge_gsva$analysis_tbl)) + 
     scale_fill_gradient2(low = 'steelblue', 
                          mid = 'black', 
                          high = 'firebrick', 
                          midpoint = 0, 
-                         limits = c(-0.65, 0.65)) + 
+                         limits = c(-0.5, 0.5), 
+                         oob = scales::squish) + 
     scale_y_discrete(label = function(x) gsva_labeller(x)) + 
     globals$common_theme + 
     theme(axis.text.y = element_text(size = 6),
@@ -218,7 +176,7 @@
                                      angle = 90), 
           axis.title = element_blank()) + 
     labs(title = 'GSVA, Reactome pathway signatures', 
-         subtitle = 'Regulated in at least four cohorts, \u03B7\u00B2 \u2265 0.06', 
+         subtitle = 'Regulated in at least four cohorts', 
          fill = 'mean ssGSEA')
   
 # Top signatures per category -----
@@ -234,15 +192,15 @@
   
   dge_gsva$top_signatures$effect_sizes <- dge_gsva$hm_plot$data %>% 
     filter(clust_id == 'hi') %>% 
-    select(variable, cohort, eta_sq, class) %>% 
-    summarise(eta_sq = mean(eta_sq), .by = c(variable, class))
+    select(variable, cohort, eff_size, class) %>% 
+    summarise(eff_size = mean(eff_size), .by = c(variable, class))
   
   ## top 5 signatures per class
   
   dge_gsva$top_signatures$top_variables <- 
     dge_gsva$top_signatures$effect_sizes %>% 
     group_by(class) %>% 
-    top_n(n = 5, eta_sq) %>% 
+    top_n(n = 5, eff_size) %>% 
     ungroup %>% 
     arrange(class)
   

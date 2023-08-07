@@ -34,13 +34,14 @@
   insert_msg('Paper scripts')
   
   ## files for the analysis report
+  ## skipped for the moment
   
-  c('./report scripts/links.R', 
-    './report scripts/report_tables.R', 
-    './report scripts/report_figures.R', 
-    './report scripts/report_supplement.R') %>% 
-    source_all(message = TRUE, crash = TRUE) %>% 
-    print
+  #c('./report scripts/links.R', 
+   # './report scripts/report_tables.R', 
+    #'./report scripts/report_figures.R', 
+  #  './report scripts/report_supplement.R') %>% 
+   # source_all(message = TRUE, crash = TRUE) %>% 
+    #print
   
   ## files for the manuscript
   

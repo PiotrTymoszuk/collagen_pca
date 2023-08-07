@@ -13,8 +13,7 @@
   
   infil$analysis_tbl <- study_data %>% 
     map(~.x$expression) %>% 
-    map(function(x) if('tissue' %in% names(x)) filter(x, tissue == 'tumor') else x)
-  
+    map(filter, tissue == 'tumor')
   
   infil$variables <- study_data %>% 
     map(~.x$annotation) %>% 
@@ -30,13 +29,8 @@
     map(column_to_rownames, 'patient_id') %>%
     map(t)
   
-  infil$analysis_tbl[c('GSE16560', 
-                       'GSE40272', 
-                       'GSE70768', 
-                       'GSE70769')] <- infil$analysis_tbl[c('GSE16560', 
-                                                            'GSE40272', 
-                                                            'GSE70768', 
-                                                            'GSE70769')] %>% 
+  infil$analysis_tbl[c("GSE16560", "GSE70768", "GSE70769", "GSE116918")] <- 
+    infil$analysis_tbl[c("GSE16560", "GSE70768", "GSE70769", "GSE116918")] %>% 
     map(~2^.x)
   
   infil$analysis_tbl$tcga <- 2^infil$analysis_tbl$tcga - 1

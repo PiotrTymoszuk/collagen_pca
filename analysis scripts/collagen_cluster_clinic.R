@@ -32,10 +32,10 @@
                                      'psa_at_diagnosis' = 'AU'; 
                                      'gleason' = 'score'; 
                                      'collagen_score' = 'Collagen Score'")), 
-           test_type = ifelse(format == 'numeric', 'kruskal_etasq', 'cramer_v'), 
+           test_type = ifelse(format == 'numeric', 'cohen_d', 'cramer_v'), 
            plot_type = ifelse(format == 'numeric', 'violin', 'stack'))
   
-  ## variables by thier format: the vestor is used later for plot styling
+  ## variables by their format: the vector is used later for plot styling
   
   cs_cluster$variables <- cs_cluster$lexicon %>% 
     blast(format) %>% 
@@ -62,10 +62,12 @@
          left_join, by = 'patient_id') %>% 
     map(mutate, 
         clust_id = stri_replace(clust_id, fixed = 'Collagen ', replacement = ''), 
-        clust_id = factor(clust_id, c('low', 'int', 'hi')), 
+        clust_id = factor(clust_id, c('low', 'hi')), 
         gleason_factor = cut(gleason, 
                              c(-Inf, 6, 7, Inf), 
-                             c('5 - 6', '7', '8+')))
+                             c('5 - 6', '7', '8+'))) %>% 
+    map(map_dfc, 
+        function(x) if(is.factor(x)) droplevels(x) else x)
   
   ## vectors with variables for single analysis tables
   

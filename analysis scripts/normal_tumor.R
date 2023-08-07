@@ -22,8 +22,7 @@
   ## compatible with paired T test
   
   norm_tumor$analysis_tbl <- 
-    study_data[c('GSE40272', 
-                 'GSE70768', 
+    study_data[c('GSE70768', 
                  'tcga')] %>% 
     map(~.x$expression) %>% 
     map(select, 
@@ -103,20 +102,11 @@
     map(map, ~.x$variable) %>% 
     transpose
   
-  ## transcripts regulated in at least two cohorts
+  ## transcripts regulated in both cohorts
   
-  norm_tumor$cmm_sets <- names(norm_tumor$test_results) %>% 
-    combn(m = 2, simplify = FALSE)
-  
-  for(i in names(norm_tumor$significant)) {
-    
-    norm_tumor$common[[i]] <- norm_tumor$cmm_sets %>% 
-      map(~norm_tumor$significant[[i]][.x]) %>% 
-      map(reduce, intersect) %>% 
-      reduce(union)
-    
-  }
-  
+  norm_tumor$common <- norm_tumor$significant %>% 
+    map(reduce, intersect)
+
 # volcano plots -------
   
   insert_msg('Volcano plots')
@@ -137,7 +127,8 @@
                       shape = 16) + 
            geom_text_repel(aes(label = plot_lab), 
                            size = 2.5, 
-                           fontface = 'italic') + 
+                           fontface = 'italic', 
+                           show.legend = FALSE) + 
            scale_color_manual(values = c(upregulated = 'firebrick', 
                                          downregulated = 'steelblue', 
                                          ns = 'gray60'), 
@@ -162,6 +153,7 @@
                         'Downregulated transcripts'), 
          text = norm_tumor$common) %>% 
     pmap(plot_venn, 
+         show_text = FALSE, 
          colors = globals$study_colors[names(norm_tumor$analysis_tbl)], 
          plot_subtitle = 'Tumor vs benign', 
          fct_per_line = 1, 
@@ -214,7 +206,7 @@
     summarise(estimate = mean(estimate), .by = variable) %>% 
     arrange(estimate)
   
-  ## axis labels: bold if significant
+  ## axis labels: all are significant, no extra labeling!
   
   norm_tumor$ribbon_plots$ax_labs <- norm_tumor$test_results %>% 
     map(filter, variable %in% norm_tumor$ribbon_plots$variables) %>% 
@@ -223,9 +215,10 @@
         significance = ifelse(stri_detect(significance, fixed = 'ns'), 
                               'ns', significance), 
         ax_lab = paste0(ax_lab, '<br>', est_lab, ', ', significance), 
-        ax_lab = ifelse(significant == 'yes', 
-                        paste0('<b>', ax_lab, '</b>'), 
-                        ax_lab)) %>% 
+        #ax_lab = ifelse(significant == 'yes', 
+         #               paste0('<b>', ax_lab, '</b>'), 
+          #              ax_lab)
+        ) %>% 
     map(~set_names(.x$ax_lab, .x$variable))
   
   ## plotting data/Z-scores and plots
@@ -263,6 +256,57 @@
                               name = '') + 
            theme(axis.title.y = element_blank(), 
                  axis.text.y = element_markdown()))
+  
+# Heat map of the means, common genes -------
+  
+  insert_msg('Heat map of the mean expression levels')
+  
+  ## plotting data, variables and plot order
+  
+  norm_tumor$hm_plot$variables <- norm_tumor$ribbon_plots$variables
+  
+  norm_tumor$hm_plot$plot_order <- norm_tumor$ribbon_plots$plot_order
+  
+  norm_tumor$hm_plot$data <- norm_tumor$ribbon_plots$data %>% 
+    map(blast, tissue) %>% 
+    map(map, select, -tissue) %>% 
+    map(map, colMeans) %>% 
+    map(map, 
+        compress, 
+        names_to = 'variable', 
+        values_to = 'mean_z_score') %>% 
+    map(compress, 
+        names_to = 'tissue') %>% 
+    compress(names_to = 'cohort')
+  
+  ## heat map
+  
+  norm_tumor$hm_plot$plot <- norm_tumor$hm_plot$data %>% 
+    ggplot(aes(x = variable, 
+               y = cohort, 
+               fill = mean_z_score)) + 
+    facet_grid(tissue ~ .) + 
+    geom_tile() + 
+    scale_x_discrete(limits = norm_tumor$hm_plot$plot_order$variable,
+                     position = 'top') + 
+    scale_fill_gradient2(low = 'steelblue', 
+                         mid = 'black', 
+                         high = 'firebrick', 
+                         midpoint = 0, 
+                         name = 'Mean Z-score') + 
+    scale_y_discrete(labels = globals$study_labels) + 
+    globals$common_theme + 
+    theme(axis.title = element_blank(), 
+          axis.line = element_blank(),
+          axis.text.x = element_text(face = 'italic', 
+                                     hjust = 0, 
+                                     vjust = 0, 
+                                     angle = 45)) + 
+    labs(title = 'Differentially expressed genes, tumor vs benign', 
+         subtitle = map2_chr(globals$study_labels[names(norm_tumor$n_tags)], 
+                             norm_tumor$n_tags, 
+                             paste, sep = ': ') %>% 
+           paste(collapse = ', '))
   
 # END ------
   

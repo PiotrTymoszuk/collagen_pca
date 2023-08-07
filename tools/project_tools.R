@@ -17,6 +17,29 @@
 
 # Clinical data formatting -------
 
+  extract_pfield <- function(x, 
+                             format = c('numeric', 'factor', 'character'), 
+                             levels = NULL) {
+    
+    format <- match.arg(format[1], 
+                        c('numeric', 'factor', 'character'))
+
+    if(is.null(levels)) {
+      
+      levels <- sort(unique(as.character(x)))
+      
+    }
+        
+    x <- stri_replace(x, regex = '.*:\\s{1}', replacement = '')
+    
+    switch(format, 
+           numeric = as.numeric(x), 
+           factor = factor(x, levels = levels), 
+           character = as.character(x))
+    
+    
+  }
+
   regex_replacer <- function(x, regex, replacement = '') {
     
     if(is.character(x)) {
@@ -153,6 +176,7 @@
 
   plot_venn <- function(plotting_lst,  
                         text = NULL, 
+                        show_text = TRUE, 
                         colors = c('blue', 'yellow', 'green', 'red'), 
                         plot_title = NULL, 
                         plot_subtitle = NULL, 
@@ -170,10 +194,12 @@
              fill_color = unname(colors), 
              set_name_size = 2.75, 
              text_size = 2.75) + 
-      theme(plot.title = element_text(size = 10, face = 'bold'), 
+      theme(plot.title = element_text(size = 8, face = 'bold'), 
             plot.subtitle = globals$common_text) + 
       labs(title = plot_title, 
            subtitle = plot_subtitle)
+    
+    if(!show_text) return(venn_plot)
     
     ## feature listing
     
@@ -402,11 +428,16 @@
               'Valine' = 'Val', 
               'leucine' = 'Leu', 
               'and ' = '', 
-              'metabolism' = '\nmetabolism', 
+              ' infection' = '\ninfection', 
+              ' metabolism' = '\nmetabolism', 
+              ' synthesis' = '\nsynthesis', 
+              'Phosphatidylinositol phosphate' = 'PIP', 
               'interconversion' = '\ninterconversion', 
               'Transport, extracellular' = 'Extracellular\ntransport', 
               'adhesion' = '\nadhesion', 
-              'Regulation of actin cytoskeleton' = 'ACT\ncytoskeleton')
+              'Regulation of actin cytoskeleton' = 'ACT\ncytoskeleton', 
+              'TGF-beta signaling pathway' = 'TGF-\u03B2', 
+              ' in' = '\nin')
     
     for(i in names(repl)) {
       
@@ -414,7 +445,7 @@
       
     }
     
-    space2break(x, 2)
+    x
     
   }
   
@@ -759,9 +790,9 @@
       theme(axis.title = element_blank(), 
             legend.title = element_markdown(), 
             axis.text.y = element_text(face = 'italic')) + 
-      facet_grid(. ~ level, 
-                 space = 'free', 
-                 scales = 'free') + 
+      #facet_grid(. ~ level, 
+       #          space = 'free', 
+        #         scales = 'free') + 
       labs(title = plot_title, 
            subtitle = plot_subtitle, 
            tag = plot_tag, 

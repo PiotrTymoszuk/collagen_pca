@@ -56,7 +56,7 @@
     clust_dev$dists %>% 
     map(~hcluster(data = clust_dev$analysis_tbl$tcga, 
                   distance_method = .x,
-                  k = 3, 
+                  k = 2, 
                   hc_method = 'ward.D2'))
   
   ## K-MEANS
@@ -65,7 +65,7 @@
     clust_dev$dists %>% 
     map(~kcluster(data = clust_dev$analysis_tbl$tcga, 
                   distance_method = .x,
-                  k = 3, 
+                  k = 2, 
                   clust_fun = 'kmeans'))
   
   ## PAM
@@ -74,7 +74,7 @@
     clust_dev$dists %>% 
     map(~kcluster(data = clust_dev$analysis_tbl$tcga, 
                   distance_method = .x,
-                  k = 3, 
+                  k = 2, 
                   clust_fun = 'pam'))
 
 # Variances of the algorithms ------

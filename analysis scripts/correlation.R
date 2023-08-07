@@ -157,34 +157,36 @@
 # Traditional scatter plots for each gene pair -------
   
   insert_msg('Gene pair scatter plots')
+  
+  ## not done for the while: memory issue!
 
-  for(i in names(corr$analysis_tbl)) {
+  #for(i in names(corr$analysis_tbl)) {
     
-    corr$plots[[i]] <- 
-      list(variables = map2(corr$test_result[[i]]$variable1, 
-                            corr$test_result[[i]]$variable2, c), 
-           plot_title = corr$test_results[[i]]$plot_title, 
-           plot_subtitle = corr$test_results[[i]]$plot_cap, 
-           x_lab = paste0('<em>', corr$test_results[[i]]$variable1, 
-                          '</em>, log<sub>2</sub> expression'), 
-           y_lab = paste0('<em>', corr$test_results[[i]]$variable2, 
-                          '</em>, log<sub>2</sub> expression')) %>% 
-      future_pmap(plot_correlation, 
-                  data = corr$analysis_tbl[[i]], 
-                  type = 'correlation', 
-                  point_color = globals$study_colors[[i]], 
-                  cust_theme = globals$common_theme, 
-                  .options = furrr_options(seed = TRUE, 
-                                           packages = c('tidyverse', 
-                                                        'exda'))) %>% 
-      map(~.x + 
-            theme(plot.tag = element_blank(), 
-                  plot.title = element_markdown(), 
-                  axis.title.x = element_markdown(), 
-                  axis.title.y = element_markdown())) %>% 
-      set_names(corr$test_results[[i]]$pair)
+   # corr$plots[[i]] <- 
+    #  list(variables = map2(corr$test_result[[i]]$variable1, 
+     #                       corr$test_result[[i]]$variable2, c), 
+      #     plot_title = corr$test_results[[i]]$plot_title, 
+       #    plot_subtitle = corr$test_results[[i]]$plot_cap, 
+        #   x_lab = paste0('<em>', corr$test_results[[i]]$variable1, 
+         #                 '</em>, log<sub>2</sub> expression'), 
+          # y_lab = paste0('<em>', corr$test_results[[i]]$variable2, 
+           #               '</em>, log<sub>2</sub> expression')) %>% 
+  #    future_pmap(plot_correlation, 
+   #               data = corr$analysis_tbl[[i]], 
+    #              type = 'correlation', 
+     #             point_color = globals$study_colors[[i]], 
+      #            cust_theme = globals$common_theme, 
+       #           .options = furrr_options(seed = TRUE, 
+        #                                   packages = c('tidyverse', 
+         #                                               'exda'))) %>% 
+    #  map(~.x + 
+     #       theme(plot.tag = element_blank(), 
+      #            plot.title = element_markdown(), 
+       #           axis.title.x = element_markdown(), 
+        #          axis.title.y = element_markdown())) %>% 
+    #  set_names(corr$test_results[[i]]$pair)
     
-  }
+  #}
 
 # END -----
   

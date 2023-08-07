@@ -23,6 +23,8 @@
   library(doParallel)
   library(soucer)
 
+  explore <- exda::explore
+
   c('./tools/import_engine.R', 
     './tools/tcga_tools.R', 
     './tools/project_tools.R') %>% 
@@ -72,6 +74,10 @@
     c('./clearing scripts/data_clearing_geo.R', 
       './clearing scripts/data_clearing_tcga.R') %>% 
       source_all(message = TRUE, crash = TRUE)
+    
+    study_data <- 
+      c(geo_cleared, 
+        list(tcga = tcga_cleared))
     
     save(study_data, file = './data/study_data.RData')
     
@@ -135,5 +141,7 @@
     source_all(message = TRUE, crash = TRUE)
   
 # END -----
+  
+  rm(geo_data, tcga_data)
   
   insert_tail()

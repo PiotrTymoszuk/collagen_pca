@@ -73,7 +73,7 @@
   ## correlation
   
   coll_clinic$age_corr <- 
-    coll_clinic$analysis_tbl[c('GSE16560', 'GSE40272', 'GSE70768', 'tcga')] %>% 
+    coll_clinic$analysis_tbl[c("GSE16560", "GSE70768", "GSE116918", "tcga")] %>% 
     future_map(function(cohort) map(coll_clinic$responses, 
                                     ~c('age', .x)) %>% 
                  map_dfr(~correlate_variables(cohort, 
@@ -101,10 +101,11 @@
   ## correlation plots
   
   coll_clinic$age_plots <- 
-    list(data = coll_clinic$analysis_tbl[c("GSE16560", "GSE40272", "GSE70768", "tcga")], 
+    list(data = coll_clinic$analysis_tbl[names(coll_clinic$age_corr)], 
          test_results = coll_clinic$age_corr, 
-         point_color = globals$study_colors[c("GSE16560", "GSE40272", "GSE70768", "tcga")]) %>% 
-    pmap(plot_clinical_correlation)
+         point_color = globals$study_colors[names(coll_clinic$age_corr)]) %>% 
+    future_pmap(plot_clinical_correlation, 
+                .options = furrr_options(seed = TRUE))
   
 # Collagen genes and PSA an diagnosis: Spearman correlation -----
   
@@ -113,7 +114,7 @@
   ## correlation
   
   coll_clinic$psa_corr <- 
-    coll_clinic$analysis_tbl[c('GSE40272', 'GSE70768', 'GSE70769', 'tcga')] %>% 
+    coll_clinic$analysis_tbl[c("GSE70768", "GSE70769", "GSE116918", "tcga")] %>% 
     future_map(function(cohort) map(coll_clinic$responses, 
                                     ~c('psa_at_diagnosis', .x)) %>% 
                  map_dfr(~correlate_variables(cohort[.x] %>% 
@@ -142,10 +143,11 @@
   ## correlation plots
   
   coll_clinic$psa_plots <- 
-    list(data = coll_clinic$analysis_tbl[c("GSE40272", "GSE70768", "GSE70769", "tcga")], 
+    list(data = coll_clinic$analysis_tbl[names(coll_clinic$psa_corr)], 
          test_results = coll_clinic$psa_corr, 
-         point_color = globals$study_colors[c("GSE40272", "GSE70768", "GSE70769", "tcga")]) %>% 
-    pmap(plot_clinical_correlation)
+         point_color = globals$study_colors[names(coll_clinic$psa_corr)]) %>% 
+    future_pmap(plot_clinical_correlation, 
+                .options = furrr_options(seed = TRUE))
 
 # Collagen genes and numeric Gleason score: Spearman correlation -------  
   
@@ -184,18 +186,71 @@
     list(data = coll_clinic$analysis_tbl, 
          test_results = coll_clinic$gleason_corr, 
          point_color = globals$study_colors[names(coll_clinic$analysis_tbl)]) %>% 
-    pmap(plot_clinical_correlation)
+    future_pmap(plot_clinical_correlation, 
+                .options = furrr_options(seed = TRUE))
 
-# Pathological stages ------
+# Pathological tumor stage -------
   
-  insert_msg('Pathological stages')
+  insert_msg('Collagen genes and pathology stage')
+  
+  ## descriptive stats
+  
+  coll_clinic$path_tumor_stats <- 
+    coll_clinic$analysis_tbl[c("GSE70768", "GSE70769", "GSE116918", "tcga")] %>% 
+    future_map(~explore(filter(.x, !is.na(pathology_stage_tumor)), 
+                        split_factor = 'pathology_stage_tumor', 
+                        variables = coll_clinic$responses, 
+                        what = 'table', 
+                        pub_styled = TRUE) %>% 
+                 reduce(left_join, by = 'variable'), 
+               .options = furrr_options(seed = TRUE))
+  
+  ## testing
+  
+  coll_clinic$path_tumor_test <- 
+    coll_clinic$analysis_tbl[c("GSE70768", "GSE70769", "GSE116918", "tcga")] %>% 
+    future_map(~compare_variables(.x %>% 
+                                    filter(!is.na(pathology_stage_tumor)), 
+                                  split_factor = 'pathology_stage_tumor', 
+                                  variables = coll_clinic$responses, 
+                                  what = 'eff_size',
+                                  types = 'etasq', 
+                                  ci = FALSE, 
+                                  exact = FALSE, 
+                                  adj_method = 'BH', 
+                                  pub_styled = TRUE), 
+               .options = furrr_options(seed = TRUE)) %>% 
+    map(mutate, plot_cap = paste(eff_size, significance, sep = ', '))
+  
+  ## significant effects
+  
+  coll_clinic$path_tumor_significant <- coll_clinic$path_tumor_test %>% 
+    map(filter, p_adjusted < 0.05) %>% 
+    map(~.x$variable)
+  
+  ## plotting
+  
+  coll_clinic$path_tumor_plots <- 
+    list(data = coll_clinic$analysis_tbl[c("GSE70768", "GSE70769", "GSE116918", "tcga")], 
+         cohort_name = c("GSE70768", "GSE70769", "GSE116918", "tcga"), 
+         test_results = coll_clinic$path_tumor_test) %>% 
+    future_pmap(plot_clinical_violin, 
+                split_factor = 'pathology_stage_tumor', 
+                variables = coll_clinic$responses, 
+                dict = coll_clinic$resp_lexicon, 
+                palette = 'Blues', 
+                x_lab = 'pathological stage', 
+                .options = furrr_options(seed = TRUE))
+  
+# Pathological node and metastasis stages ------
+  
+  insert_msg('Pathological node and metastasis stages')
   
   ## descriptive stats
   
   coll_clinic$stages_stats <- 
-    coll_clinic$analysis_tbl[c('GSE40272', 'GSE70768', 'GSE70769', 'tcga')] %>% 
-    future_map(function(cohort) c(pathology_stage_tumor = 'pathology_stage_tumor', 
-                                  pathology_stage_node = 'pathology_stage_node', 
+    coll_clinic$analysis_tbl[c("GSE70768", "GSE70769", "tcga")] %>% 
+    future_map(function(cohort) c(pathology_stage_node = 'pathology_stage_node', 
                                   pathology_stage_meta = 'pathology_stage_meta') %>% 
                  map(~explore(filter(cohort, !is.na(.data[[.x]])), 
                               split_factor = .x, 
@@ -209,12 +264,11 @@
   ## testing for differences: one-way ANOVA
   
   coll_clinic$stages_test <- 
-    coll_clinic$analysis_tbl[c('GSE40272', 'GSE70768', 'GSE70769', 'tcga')] %>% 
+    coll_clinic$analysis_tbl[c("GSE70768", "GSE70769", "tcga")] %>% 
     future_map(function(cohort)  
-      map2(c(pathology_stage_tumor = 'pathology_stage_tumor', 
-             pathology_stage_node = 'pathology_stage_node', 
+      map2(c(pathology_stage_node = 'pathology_stage_node', 
              pathology_stage_meta = 'pathology_stage_meta'), 
-           c('etasq', 'cohen_d', 'cohen_d'), 
+           c('cohen_d', 'cohen_d'), 
            ~safely(compare_variables)(filter(cohort, !is.na(.data[[.x]])), 
                                       split_factor = .x, 
                                       variables = coll_clinic$responses, 
@@ -233,38 +287,23 @@
   coll_clinic$stages_significant <- coll_clinic$stages_test %>% 
     map(map, filter, p_adjusted < 0.05) %>% 
     map(map, ~.x$variable)
-  
-# Plotting of the pathological tumor stage -----
-  
-  insert_msg('Plotting of the pathological tumor stages')
-  
-  coll_clinic$tumor_stage_plots <- 
-    list(data = coll_clinic$analysis_tbl[c("GSE40272", "GSE70768", "GSE70769", "tcga")],
-         cohort_name = c("GSE40272", "GSE70768", "GSE70769", "tcga"), 
-         test_results = coll_clinic$stages_test[c("GSE40272", "GSE70768", "GSE70769", "tcga")] %>% 
-           map(~.x$pathology_stage_tumor)) %>% 
-    pmap(plot_clinical_violin, 
-         split_factor = 'pathology_stage_tumor', 
-         variables = coll_clinic$responses, 
-         dict = coll_clinic$resp_lexicon, 
-         palette = 'Blues', 
-         x_lab = 'Tumor pathology stage')
 
 # Plotting of the pathological node stage -----
   
   insert_msg('Plotting of the pathological node stages')
   
   coll_clinic$node_stage_plots <- 
-    list(data = coll_clinic$analysis_tbl[c("GSE40272", "GSE70768", "tcga")],
-         cohort_name = c("GSE40272", "GSE70768", "tcga"), 
-         test_results = coll_clinic$stages_test[c("GSE40272", "GSE70768", "tcga")] %>% 
+    list(data = coll_clinic$analysis_tbl[c("GSE70768", "tcga")],
+         cohort_name = c("GSE70768", "tcga"), 
+         test_results = coll_clinic$stages_test[c("GSE70768", "tcga")] %>% 
            map(~.x$pathology_stage_node)) %>% 
-    pmap(plot_clinical_violin, 
-         split_factor = 'pathology_stage_node', 
-         variables = coll_clinic$responses, 
-         dict = coll_clinic$resp_lexicon, 
-         palette = 'Blues', 
-         x_lab = 'Node pathology stage')
+    future_pmap(plot_clinical_violin, 
+                split_factor = 'pathology_stage_node', 
+                variables = coll_clinic$responses, 
+                dict = coll_clinic$resp_lexicon, 
+                palette = 'Blues', 
+                x_lab = 'Node pathology stage',
+                .options = furrr_options(seed = TRUE))
   
 # Plotting of the pathological metastasis stage -----
   
@@ -275,12 +314,13 @@
          cohort_name = c("GSE70769", "tcga"), 
          test_results = coll_clinic$stages_test[c("GSE70769", "tcga")] %>% 
            map(~.x$pathology_stage_meta)) %>% 
-    pmap(plot_clinical_violin, 
-         split_factor = 'pathology_stage_meta', 
-         variables = coll_clinic$responses, 
-         dict = coll_clinic$resp_lexicon, 
-         palette = 'Blues', 
-         x_lab = 'Metastasis pathology stage')
+    future_pmap(plot_clinical_violin, 
+                split_factor = 'pathology_stage_meta', 
+                variables = coll_clinic$responses, 
+                dict = coll_clinic$resp_lexicon, 
+                palette = 'Blues', 
+                x_lab = 'Metastasis pathology stage', 
+                .options = furrr_options(seed = TRUE))
   
 # Extra-capsular extension -------
   
@@ -328,12 +368,13 @@
     list(data = coll_clinic$analysis_tbl[c("GSE70768", "GSE70769")], 
          cohort_name = c("GSE70768", "GSE70769"), 
          test_results = coll_clinic$ece_test) %>% 
-    pmap(plot_clinical_violin, 
-         split_factor = 'extra_capsular_extension', 
-         variables = coll_clinic$responses, 
-         dict = coll_clinic$resp_lexicon, 
-         palette = 'Blues', 
-         x_lab = 'Extra-capsular extension')
+    future_pmap(plot_clinical_violin, 
+                split_factor = 'extra_capsular_extension', 
+                variables = coll_clinic$responses, 
+                dict = coll_clinic$resp_lexicon, 
+                palette = 'Blues', 
+                x_lab = 'Extra-capsular extension', 
+                .options = furrr_options(seed = TRUE))
 
 # Positive surgical margins and collagen genes ------
   
@@ -342,7 +383,7 @@
   ## descriptive stats
   
   coll_clinic$margin_stats <- 
-    coll_clinic$analysis_tbl[c('GSE40272', 'GSE70768', 'GSE70769')] %>% 
+    coll_clinic$analysis_tbl[c('GSE70768', 'GSE70769')] %>% 
     map(~explore(filter(.x, !is.na(positive_surgical_margins)), 
                  split_factor = 'positive_surgical_margins', 
                  variables = coll_clinic$responses, 
@@ -354,7 +395,7 @@
   ## testing
   
   coll_clinic$margin_test <- 
-    coll_clinic$analysis_tbl[c('GSE40272', 'GSE70768', 'GSE70769')] %>% 
+    coll_clinic$analysis_tbl[c('GSE70768', 'GSE70769')] %>% 
     future_map(~compare_variables(.x %>% 
                              filter(!is.na(positive_surgical_margins)) %>% 
                              mutate(positive_surgical_margins = factor(positive_surgical_margins, 
@@ -372,16 +413,23 @@
   ## plotting
   
   coll_clinic$margin_plots <- 
-    list(data = coll_clinic$analysis_tbl[c("GSE40272", "GSE70768", "GSE70769")], 
-         cohort_name = c("GSE40272", "GSE70768", "GSE70769"), 
+    list(data = coll_clinic$analysis_tbl[c("GSE70768", "GSE70769")], 
+         cohort_name = c("GSE70768", "GSE70769"), 
          test_results = coll_clinic$margin_test) %>% 
-    pmap(plot_clinical_violin, 
-         split_factor = 'positive_surgical_margins', 
-         variables = coll_clinic$responses, 
-         dict = coll_clinic$resp_lexicon, 
-         palette = 'Blues', 
-         x_lab = 'Positive surgical margins')
+    future_pmap(plot_clinical_violin, 
+                split_factor = 'positive_surgical_margins', 
+                variables = coll_clinic$responses, 
+                dict = coll_clinic$resp_lexicon, 
+                palette = 'Blues', 
+                x_lab = 'Positive surgical margins', 
+                .options = furrr_options(seed = TRUE))
 
+# caching the results ------
+  
+  insert_msg('Caching the results')
+  
+  save(coll_clinic, file = './cache/coll_clinic.RData')  
+  
 # END -----
   
   rm(i)
