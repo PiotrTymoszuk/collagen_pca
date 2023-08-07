@@ -3,16 +3,6 @@ Expression, biological and clinical relevance of the collagen pathway genes in p
 
 ## Summary and results
 
-To see the analysis report, please follow the links:
-
-* _analysis report_: still pending
-
-* PDF files with [analysis report figures](https://github.com/PiotrTymoszuk/collagen_pca/tree/main/report/figures)
-
-* PDF files with [analysis report supplementary figures](https://github.com/PiotrTymoszuk/collagen_pca/tree/main/report/supplementary%20figures)
-
-* an Excel file with [analysis report supplementary tables](https://github.com/PiotrTymoszuk/collagen_pca/blob/main/report/manuscript_supplementary_tables.xlsx)
-
 To access manuscript files, please use the following links:
 
 * a Word file with [main manuscript tables, figures and parts of methods](https://github.com/PiotrTymoszuk/collagen_pca/blob/main/report/report_supplementary_tables.xlsx)
