@@ -3,10 +3,11 @@
   library(soucer)
   
   print(source_all(c('import.R', 
-                     'analysis.R', 
-                     'dge.R', 
-                     'metabolism.R', 
-                     'mutations.R', 
+                     'exploration.R', 
+                     'gleason.R', 
+                     'survival.R', 
+                     'clustering.R', 
+                     'characteristic.R', 
                      'report.R'), 
                    message = TRUE, 
                    crash = TRUE))

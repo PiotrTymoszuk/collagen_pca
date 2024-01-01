@@ -2,7 +2,6 @@
 
 # tools ----
 
-  library(plyr)
   library(tidyverse)
   library(exda)
   library(figur)
@@ -20,31 +19,22 @@
   library(rlang)
   library(survival)
 
+  explore <- exda::explore
   select <- dplyr::select
   reduce <- purrr::reduce
-  width <- flextable::width
-
+  set_rownames <- trafo::set_rownames
+  extract <- clustTools::extract
+  
   insert_head()
   
-  source_all('./tools/project_tools.R', 
-             message = TRUE, crash = TRUE)
+  c('./tools/globals.R', 
+    './tools/functions.R') %>% 
+    source_all(message = TRUE, crash = TRUE)
   
 # sourcing the scripts -----
   
   insert_msg('Paper scripts')
-  
-  ## files for the analysis report
-  ## skipped for the moment
-  
-  #c('./report scripts/links.R', 
-   # './report scripts/report_tables.R', 
-    #'./report scripts/report_figures.R', 
-  #  './report scripts/report_supplement.R') %>% 
-   # source_all(message = TRUE, crash = TRUE) %>% 
-    #print
-  
-  ## files for the manuscript
-  
+
   c('./report scripts/links.R', 
     './report scripts/paper_tables.R', 
     './report scripts/paper_figures.R', 
@@ -52,7 +42,7 @@
     source_all(message = TRUE, crash = TRUE) %>% 
     print
   
-  ## rendering the analysis report and parts of the manuscript
+  ## rendering parts of the manuscript
   
   c('./report scripts/render.R') %>% 
     source_all(message = TRUE, crash = TRUE)

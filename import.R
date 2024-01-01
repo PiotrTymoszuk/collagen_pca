@@ -1,147 +1,99 @@
-# This script imports prostate cancer data from GEO (GSE16560, GSE40272, GSE70768 and GSE70769)
-# and the TCGA PCA next generation RNA seq data
-# Expression values log2(x) (Microarray) or log2(x + 1) (TCGA) transformed
-#
-# For modeling and clustering, the collagen gene dataset is normalized 
-# with ComBat to suppress the cohort-specific effects
+# This script imports prostate cancer data from GEO 
+# (GSE16560, GSE54460, GSE70768 and GSE70769, GSE116918)
+# and the TCGA and DKFZ RNA seq data obteined from cBioportal
+# Expression values log2(x) (Microarray) or log2(x + 1) (RNAseq) transformed
 
 # toolbox ----
 
-  library(plyr)
   library(tidyverse)
   library(readxl)
-  library(purrr)
   library(rlang)
   library(trafo)
+  library(stringi)
   
   library(immunedeconv)
   library(sva)
   library(exda)
-  library(clustTools)
+  library(microViz)
+  library(gseaTools)
+  
+  library(GEOquery)
+  library(biggrExtra)
+  library(org.Hs.eg.db)
+  library(AnnotationDbi)
   
   library(furrr)
-  library(doParallel)
   library(soucer)
 
-  explore <- exda::explore
-
-  c('./tools/import_engine.R', 
-    './tools/tcga_tools.R', 
-    './tools/project_tools.R') %>% 
-    source_all(message = TRUE, crash = TRUE)
-  
   insert_head()
-  
-# data containers -----
-  
-  geo_data <- list() ## raw geo data
-  tcga_data <- list() ## raw tcga data
 
-  study_data <- list() ## cleared data in the uniform formt
+  explore <- exda::explore
+  select <- dplyr::select
+  reduce <- purrr::reduce
+  set_rownames <- trafo::set_rownames
+
+  c('./tools/globals.R', 
+    './tools/functions.R') %>% 
+    source_all(message = TRUE, crash = TRUE)
   
 # executing data import scripts, from scratch if not done before, saving the raw data ----
   
-  insert_msg('Reading the raw expression and clinical data')
-  
-  if(('geo_data.RData' %in% list.files('./data')) & 
-     ('tcga_data.RData' %in% list.files('./data'))) {
-    
-    load('./data/geo_data.RData')
-    load('./data/tcga_data.RData')
+  insert_msg('Reading the expression and clinical data')
 
-  } else {
+  for(i in names(globals$study_labels)) {
     
-    c('./import scripts/geo_import.R', 
-      './import scripts/tcga_import.R') %>% 
-      walk(function(x) tryCatch(source(x), 
-                                finally = go_proj_directory()))
-    
-    save(geo_data, file = './data/geo_data.RData')
-    save(tcga_data, file = './data/tcga_data.RData')
+    access_cache(cache_path = paste0('./data/', i, '.RData'), 
+                 script_path = paste0('./import scripts/', 
+                                      globals$study_labels[i], '.R'),
+                 message = paste('Loading cleared data for:', i))
     
   }
   
-# data clearing: creating uniform data tibbles with whole genome expression and clinical data ----- 
+  ## control for presence of all requested collagen-related transcripts
   
-  insert_msg('Data clearing')
+  globals$study_exprs %>% 
+    eval %>% 
+    map(~.x$expression) %>% 
+    map(names) %>% 
+    map(~globals$genes_interest$gene_symbol[!globals$genes_interest$gene_symbol %in% .x])
   
-  if('study_data.RData' %in% list.files('./data')) {
-    
-    load('./data/study_data.RData')
+# Infiltration --------
+  
+  insert_msg('Infiltration')
+  
+  list(cache_path = c('./data/xcell.RData', 
+                      './data/mcp.RData'), 
+       script_path = c('./import scripts/xCell.R', 
+                       './import scripts/MCPcounter.R'), 
+       message = paste('Loading cached infiltration data for:', 
+                       c('xCell', 'MCP counter'))) %>% 
+    pwalk(access_cache)
+  
+# Reactome and recon signatures -------
+  
+  insert_msg('Signature scores')
+  
+  list(cache_path = c('./data/reactome.RData',
+                      './data/recon.RData'), 
+       script_path = c('./import scripts/reactome.R', 
+                       './import scripts/recon.R'), 
+       message = paste('Loading cached ssGSEA scores for', 
+                       c('Reactome pathways', 
+                         'Recon subsystems'))) %>% 
+    pwalk(access_cache)
+  
+# Treatment of genes used for clustering with COMBAT -------
+  
+  insert_msg('COMBAT for the clustering genes')
+  
+  ## done only on request: 
+  ## abstaining from the batch correction since it distorts 
+  ## the gene co-expression patterns (nearest neighbors)
+  ## as investigated by MDS and PCA during exploratory data analysis
+  
+  #source_all('./import scripts/combat.R', 
+   #          message = TRUE, crash = TRUE)
 
-  } else {
-    
-    c('./clearing scripts/data_clearing_geo.R', 
-      './clearing scripts/data_clearing_tcga.R') %>% 
-      source_all(message = TRUE, crash = TRUE)
-    
-    study_data <- 
-      c(geo_cleared, 
-        list(tcga = tcga_cleared))
-    
-    save(study_data, file = './data/study_data.RData')
-    
-  }
-  
-# Fetching the infiltration data -------
-  
-  insert_msg('Infiltration data')
-  
-  if(file.exists('./data/infiltration.RData')) {
-    
-    load('./data/infiltration.RData')
-    
-  } else  {
-    
-    source_all('./clearing scripts/infiltration.R', 
-               message = TRUE, crash = TRUE)
-    
-  }
-  
-  infil$xcell_types <- infil$xcell[[1]]$cell_type
-  infil$mcp_counter_types <- infil$mcp_counter[[1]]$cell_type
-  
-  infil[c('xcell', 'mcp_counter')] <- 
-    infil[c('xcell', 'mcp_counter')] %>% 
-    map(~map(.x, column_to_rownames, 'cell_type') %>% 
-          map(t) %>% 
-          map(as.data.frame) %>% 
-          map(rownames_to_column, 'patient_id') %>% 
-          map(as_tibble))
-  
-# Fetching the Reactome signatures ------
-  
-  insert_msg('Fetching the Reactome signatures')
-  
-  if(file.exists('./data/reactome.RData')) {
-    
-    insert_msg('Loading the cached signature dataset')
-    
-    load('./data/reactome.RData')
-    
-  } else {
-    
-    source_all('./clearing scripts/reactome.R', 
-               message = TRUE, crash = TRUE)
-    
-  }
-
-# globals setup -----
-  
-  insert_msg('Globals setup')
-  
-  c('./tools/globals.R') %>% 
-    source_all(message = TRUE, crash = TRUE)
-
-# ComBat normalization of the collagen dataset ------
-  
-  insert_msg('Combat normalization')
-  
-  c('./clearing scripts/combat.R') %>% 
-    source_all(message = TRUE, crash = TRUE)
-  
 # END -----
-  
-  rm(geo_data, tcga_data)
   
   insert_tail()
