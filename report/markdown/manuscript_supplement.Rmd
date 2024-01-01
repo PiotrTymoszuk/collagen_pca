@@ -1,5 +1,5 @@
 ---
-title: "Prognostic and biologic relevance of collagen biosynthesis pathway in prostate cancer"
+title: "Prognostic and biological relevance of collagen biosynthesis pathway in prostate cancer"
 subtitle: "Supplementary material, transcriptome part"
 date: "`r format(Sys.time(), '%Y-%m-%d')`"
 
@@ -60,65 +60,62 @@ The analysis was done with R version 4.2.3 (R Foundation).
 Tabular data were handled with the packages _tidyverse_ [@Wickham2019], _rlang_ [@Henry2022] and [_trafo_](https://github.com/PiotrTymoszuk/trafo). 
 Text data were handled with _stringi_ [@Gagolewski2021]. 
 
-Import of the TCGA dataset was accomplished with the [_TCGA-Assembler-2_ script](https://github.com/compgenome365/TCGA-Assembler-2/tree/master/TCGA-Assembler). 
+Import of the TCGA and DKFZ data sets from the cBioportal repository was accomplished with in-house-developed R scripts. 
 Transcriptome datasets from the Gene Expression Omnibus were fetched with the _GEOquery_ package [@Sean2007]. 
 Gene and probe annotation was accomplished with the _AnnotationDbi_ [@Pages2022] and _org.Hs.eg.db_ packages [@Carlson2022]. 
-For prediction of non-malignant cell counts and fractions in cancer samples, the R implementation of the _MCP-counter_ and _xCell_ algorithms provided by the _immunedeconv_ package was used [@Sturm2020; @Aran2017; @Becht2016]. 
-Single sample gene set enrichment analysis scores (ssGSEA) were computed with the _GSVA_ algorithm [@Hanzelmann2013] implemented by the development package [_gseaTools_](https://github.com/PiotrTymoszuk/gseaTools). 
-Expression data of collegen genes were adjusted for batch effects with the _COMBAT_ algorithm implemented by the _sva_ package [@Leek2012].
+For prediction of non-malignant cell counts and fractions in cancer samples, the R implementation of the _MCP Counter_ and _xCell_ algorithms provided by the _immunedeconv_ package was used [@Sturm2020; @Aran2017; @Becht2016]. 
+Single sample gene set enrichment analysis scores (ssGSEA) were computed with the _GSVA_ algorithm [@Hanzelmann2013] implemented by the package [_gseaTools_](https://github.com/PiotrTymoszuk/gseaTools). 
 
-Semi supervised clustering was accomplished with the development package [_clustTools_](https://github.com/PiotrTymoszuk/clustTools) employing algorithms provided by the _philentropy_, _cluster_ and _factorextra_ packages [@Kassambara2020; @Schubert2019; @Drost2018; @Konopka2022].
+Semi-supervised clustering was done with the package [_clustTools_](https://github.com/PiotrTymoszuk/clustTools) employing algorithms from the _philentropy_, _cluster_, _factoextra_ and _umap_ packages [@Kassambara2020; @Schubert2019; @Drost2018; @Konopka2022].
 
 For statistical hypothesis testing, effect size calculation, gene set variation analysis (GSVA) and differential gene expression analysis, the packages _rstatix_ [@Kassambara2021], [_ExDA_](https://github.com/PiotrTymoszuk/ExDA) and [_microViz_](https://github.com/PiotrTymoszuk/microViz) were employed. 
-Signaling pathway analysis was done with the package _SPIA_ [@Tarca2009].  
+Biological process gene ontology (GO) enrichment analysis was performed with the _goana_ algorithm implemented by the _limma_ [@Young2010] and [_microViz_](https://github.com/PiotrTymoszuk/microViz) packages. 
+Clustering of GO terms by their semantic similarity was accomplished with _GOSemSim_ [@Yu2010], [_microViz_](https://github.com/PiotrTymoszuk/microViz) and [_clustTools_](https://github.com/PiotrTymoszuk/clustTools). 
+Differential modulation of transcriptional regulons and signaling pathways was analyzed with the _collecTRI_ [@Muller-Dott2023] and _PROGENy_ [@Schubert2018] databases by linear modeling tools of the _decoupleR_ package [@Badia-I-Mompel2022]. 
 Metabolic reaction activity modeling and metabolic subsystem enrichment analysis were performed with the packages _BiGGR_ [@Gavai2015; @King2016] and [_biggrExtra_](https://github.com/PiotrTymoszuk/biggrExtra). 
 
+For multi-parameter Elastic Net Cox modeling, the packages _glmnet_ [@Friedman2010], _survival_ [@Therneau2000], _surviminer_ [@Kassambara2016] and [_coxExtensions_](https://github.com/PiotrTymoszuk/coxExtensions) were used. 
+
 For visualization of the results, the packages 
-_ggplot2_ [@Wickham2019] (scatter, bubble and bar plots, heat maps), 
-[_ExDA_](https://github.com/PiotrTymoszuk/ExDA) (violin, stack and ribbon plots), 
-[_microViz_](https://github.com/PiotrTymoszuk/microViz) (Forest plots) and 
-[_biggrExtra_](https://github.com/PiotrTymoszuk/biggrExtra) (fold-regulation estimates of metabolic reactions). 
+_ggplot2_ [@Wickham2019] (scatter, stack, bubble and bar plots, heat maps), 
+[_ExDA_](https://github.com/PiotrTymoszuk/ExDA) (violin, stack and ribbon plots), _survminer_ and [_coxExtensions_](https://github.com/PiotrTymoszuk/coxExtensions) (Kaplan-Meier plots), and 
+[_microViz_](https://github.com/PiotrTymoszuk/microViz) (heat maps) were used. 
 Figures and tables were created with the packages _cowplot_ [@Wilke2019] and _flextable_ [@Gohel2022].
 
 ## Data sources and data import
 
-The TCGA prostate cancer dataset [@Abeshouse2015] consisting of 
-`r study_data$tcga$expression %>% filter(tissue == 'tumor') %>% nrow` normalized expression (level 3) data for primary cancer samples and clinical information was imported in R from the GDC repository with the [_TCGA-Assembler-2_ script](https://github.com/compgenome365/TCGA-Assembler-2/tree/master/TCGA-Assembler). 
+Transcriptome cohorts for analysis in the current report were selected from studies deposited at cBioportal and Gene Expression Omnibus (GEO) with the following criteria: availability of information on Gleason scoring, biochemical relapse and biochemical relapse-free survival, and expression data for `r nrow(globals$genes_interest)` collagen-related genes investigated also in the proteomic part of the project (__Supplementary Table S\@ref(tab:tab-cohorts)__ and __S\@ref(tab:tab-genes)__).
+
+The TCGA prostate cancer data set [@Liu2018; @Abeshouse2015] and DKFZ data set [@Gerhauser2018] consisted of normalized RNA sequencing data for `r tcga$expression %>% filter(tissue_type == 'tumor') %>% nrow` and `r dkfz$expression %>% filter(tissue_type == 'tumor') %>% nrow` cancer samples, respectively, with accompanying clinical information and were obtained from the cBioportal repository with in-house-developed R scripts. 
 The TCGA cohort included also 
-`r study_data$tcga$expression %>% filter(tissue == 'benign') %>% nrow` donor-matched samples of the benign prostate and prostate cancer tissue. 
-The available clinical information for the TCGA cohort included age, pathological staging for the tumor, node and distant metastases, tumor grade, Gleason scoring, blood concentrations of prostate-specific antigen (PSA) and diagnosis, overall and biochemical relapse-free survival. 
-The GSE16560, GSE70768, GSE70769 and GSE116918 normalized whole-transcriptome datasets deposited by the study authors were fetched from GEO with the _GEOquery_ package (function `getGEO()`) [@Sean2007]. 
-Transcriptomes of the GSE16560 primary cancer samples (n = `r study_data$GSE16560$expression %>% nrow`) [@Sboner2010] were measured with a custom microarray developed by Illumina. 
-The accompanying clinical information included age, Gleason score and overall survival. 
-Transcriptome measurements in primary cancer samples (n = `r study_data$GSE70768$expression %>% filter(tissue == 'tumor') %>% nrow`) in the GSE70768 cohort were done with the Illumina HumanHT-12 V4.0 expression beadchip microarray. 
-The GSE70768 dataset [@Ross-Adams2015] included also `r study_data$GSE70768$expression %>% filter(tissue == 'benign') %>% nrow` donor-matched normal prostate and cancer tissue specimens. 
-The clinical information for the GSE70768 dataset encompassed age, clinical and pathological staging of the tumor, lymph nodes and distant metastases, PSA concentrations at diagnosis, data on extra capsular extension and positive surgery margins, Gleason scoring as well as biochemical relapse-free survival.
-The GSE70769 dataset [@Ross-Adams2015] consisted of `r study_data$GSE70769$expression %>% nrow` primary cancer specimens, whose transcriptomes were gauged with Illumina HumanHT-12 V4.0 expression beadchip. 
-The clinical information for the GSE70769 dataset encompassed clinical and pathological staging of the tumor, lymph nodes and distant metastases, PSA concentrations at diagnosis, data on extra capsular extension and positive surgery margins, Gleason scoring as well as biochemical relapse-free survival. 
-The GSE116918 dataset [@Jain2018] included `r study_data$GSE116918$expression %>% nrow` prostate cancer biopsy specimens. 
-The transcriptome measurements were performed with a custom-made microarray by Affymetrix (Almac Diagnostics Prostate Disease Specific Array). 
-The accompanying clinical information consisted of age, blood PSA concentrations at diagnosis, pathological staging of the tumor, Gleason scoring and biochemical relapse-free survival.
-Clinical characteristic of the analyzed cohorts is provided in __Table 1__.
+`r norm_tumor$n_numbers$tcga` donor-matched samples of the benign prostate and prostate cancer tissue.  
+The GSE54460 [@Long2014] (RNA sequencing, n = `r gse54460$expression %>% filter(tissue_type == 'tumor') %>% nrow` cancer samples), 
+GSE70768 [@Ross-Adams2015] (Illumina HumanHT-12 V4.0 expression beadchip microarray, n = `r gse70768$expression %>% filter(tissue_type == 'tumor') %>% nrow`), 
+GSE70769 [@Ross-Adams2015] (Illumina HumanHT-12 V4.0 expression beadchip microarray, n = `r gse70769$expression %>% filter(tissue_type == 'tumor') %>% nrow`), and 
+GSE220095 [@Schimmelpfennig2023] (RNA sequencing, n = `r gse220095$expression %>% filter(tissue_type == 'tumor') %>% nrow`) data sets included normalized whole-transcriptome and basic clinical information and were fetched from GEO with the `getGEO()` function from the _GEOquery_ package. 
+The GSE70768 data set [@Ross-Adams2015] included also `r norm_tumor$n_numbers$gse70768` donor-matched normal prostate and cancer tissue specimens. 
+Demographic and clinical characteristic of the investigated transcriptome data sets is provided in  __Supplementary Table S\@ref(tab:tab-cohorts)__. 
 
-Gene expression levels were transformed with the $log_2(expression)$ and $log_2(FKPM + 1)$ function for the microarray and RNA sequencing datasets prior to the analysis. 
-Prior to semi-supervised clustering, inter-cohort variability in normalized $log_2$-transformed expression of collagen pathway genes was reduced by with the `ComBat()` function from the package _sva_ [@Leek2012]. 
-
-The MCP-counter and xCell estimates of non-malignant cell content in cancer samples were computed with the `deconvolute()` function from the _immunedeconv_ package. 
+Gene expression levels were transformed with the $log_2(expression)$ and $log_2(count + 1)$ function for the microarray and RNA sequencing data sets prior to further analyses. 
+The _MCP Counter_ and _xCell_ estimates of non-malignant cell content in cancer samples were computed with the `deconvolute()` function from the _immunedeconv_ package. 
 Gene signatures of the [Reactome pathways](https://reactome.org/) were obtained from the [MSig database](https://www.gsea-msigdb.org/gsea/msigdb/index.jsp), version 7.5.1. 
 ssGSEA scores were computed with the `calculate()` function from the [_gseaTools_](https://github.com/PiotrTymoszuk/gseaTools) package. 
 
-The collagen pathway genes investigated in the current report included the published Collagen Signature [@Kocher2021] and the Reactome Collagen formation pathway genes (R-HSA-1474290) and was constrained to `r nrow(globals$genes_interest)` genes detected in all expression datasets (__Supplementary Table S\@ref(tab:tab-genes)__).
+The investigated collagen-related genes included the published Collagen Signature [@Kocher2021] and the Reactome Collagen formation pathway genes (R-HSA-1474290) and were constrained to features covered by proteomic analyses of the current report (__Supplementary Table S\@ref(tab:tab-genes)__).
 
 ## Statistical hypothesis testing, effect size and statistical significance
 
-Differences in numeric variables were investigated by paired and unpaired two-tailed T tests with Cohen's d effect size statistic or Mann-Whitney tests with r effect size statistic. 
+Differences in numeric variables between two groups were investigated by paired and unpaired two-tailed T tests with Cohen's d effect size statistic or Mann-Whitney tests with r effect size statistic. 
+Differences in numeric variables between three or more groups were assessed by one-way ANOVA with $\eta^2$ effect size statistic. 
 Differences in distribution of categorical variables were assessed by $\chi^2$ test with Cramer's V effect size statistic. 
-Statistical significance for enrichment of regulated metabolic reactions in metabolic subsystems was investigated by Fisher's exact test with odds ratio (OR) as an effect size statistic. 
+Odds ratio served as an effect size statistic in enrichment analyses. 
 Effect sizes were interpreted as follows [@Cohen2013]: 
 
 * Cohen's d, weak: 0.2 - 0.5, moderate: 0.5 - 0.8, large: $\geq$ 0.8
 
 * r, weak: 0.1 - 0.3, moderate: 0.3 - 0.5, large: $\geq$ 0.5
+
+* $\eta^2$: weak: 0.02 - 0.13, moderate: 0.13 - 0.26, large: $\geq$ 0.26
 
 * Cramer's V, weak: 0.1 - 0.3, moderate: 0.3 - 0.5, large: $\geq$ 0.5
 
@@ -127,102 +124,150 @@ Effect sizes were interpreted as follows [@Cohen2013]:
 P values were corrected for multiple testing with the false discovery rate method (FDR) [@Benjamini1995] within each analysis step and cohort. 
 Effects were considered statistically significant for FDR-corrected p values < 0.05.
 
-## Comparison of collagen pathway gene expression between the benign and cancer tissue
+## Comparison of gene expression between the benign and cancer tissue, and cancer samples stratified by Gleason scores
 
-Differences in $log_2$-transformed expression levels of the collagen pathway genes between donor-matched cancer and benign prostate specimens were investigated with paired two-tailed T test with Cohen's effect size statistic (function `compare_variables()`, package [_ExDA_](https://github.com/PiotrTymoszuk/ExDA)) in the GSE70768 and TCGA cohorts. 
-The analysis results are presented in __Figure 1B__, __Supplementary Figure S\@ref(fig:fig-norm-tumor)__ and __Supplementary Table S\@ref(tab:tab-norm-tumor)__.
+Differences in $log_2$-transformed expression levels of the collagen pathway genes between donor-matched cancer and benign prostate specimens were investigated with paired two-tailed T test with Cohen's effect size statistic in the GSE70768 and TCGA cohorts (__Figure 1B__, __Supplementary Figure S\@ref(fig:fig-norm-tumor)__ and __Supplementary Table S\@ref(tab:tab-norm-tumor)__). 
+Differences in gene expression between cancer samples stratified by Gleason score (5 - 6, 7, $\geq$ 8) were explored by one-way ANOVA with $\eta^2$ effect size statistic (__Figure 1C__, __Supplementary Table S\@ref(tab:tab-gleason)__).
+Differentially regulated genes were defined by pFDR < 0.05 and at least weak effect size of the difference (d $\geq$ 0.2 or $\eta^2 \geq$ 0.02). 
+The analyses were done with the function `compare_variables()` from the [_ExDA_](https://github.com/PiotrTymoszuk/ExDA) package.
 
 ## Collagen clusters of prostate cancer samples
 
-Prostate cancer samples in the TCGA cohort were clustered by their COMBAT-adjusted normalized $log_2$-transformed expression levels of the collagen pathway genes with the PAM (partition around medoids) algorithm with cosine distance between the samples (function `kcluster()`, package [_clustTools_](https://github.com/PiotrTymoszuk/clustTools)). 
-The choice of the clustering algorithm was motivated by the trade-off between the high explanatory performance measured by 'explained' clustering variance (ratio of the total between-cluster sum of squares to the total sum of squares) and the optimal reproducibility in 10-fold cross-validation (mean rate of the correct cluster assignment in the folds) [@Lange2004; @Leng2014] as compared with hierarchical clustering and KMEANS procedures (__Supplementary Figure S\@ref(fig:fig-clust-dev)A__). 
-For variance computation and cross-validation, the methods `var()` and `cv()` provided by the [_clustTools_](https://github.com/PiotrTymoszuk/clustTools) package were used.
-The cluster number choice was based on the bend of the curve of within-cluster sum of squares [@Kassambara2020] and the peak of the average silhouette statistic [@Rousseeuw1987] (method `plot()`, package [_clustTools_](https://github.com/PiotrTymoszuk/clustTools), __Supplementary Figure S\@ref(fig:fig-clust-dev)B__). 
-By this means, two clusters of the samples were identified: 'collagen^high^' and 'collagen^low^' cancers.
+Prostate cancer samples in the TCGA cohort were clustered by normalized $log_2$-transformed expression levels of the collagen-related genes of interest with the PAM (partition around medoids) algorithm with cosine distance between the samples (function `kcluster()`, package [_clustTools_](https://github.com/PiotrTymoszuk/clustTools)). 
+The choice of the clustering algorithm was motivated by the following criteria (__Supplementary Figure S\@ref(fig:fig-clust-dev)A__): 
 
-Assignment of cancers samples of the GSE16560, GSE70768, GSE70769 and GSE116918 collectives to the collagen clusters based on COMBAT-adjusted normalized $log_2$-transformed expression levels of the collagen pathway genes was done with an inverse distance weighted k-nearest neighbor classifier (method `predict()`, package [_clustTools_](https://github.com/PiotrTymoszuk/clustTools)) [@Leng2014]. 
-The choice of the nearest neighbor number k was motivated by the maximum value of the 'explained' clustering variance defined above (
-GSE16560: k = `r coll_clust$semi_clust$GSE16560$kNN`, 
-GSE70768: k = `r coll_clust$semi_clust$GSE70768$kNN`, 
-GSE70769: k = `r coll_clust$semi_clust$GSE70769$kNN`, 
-GSE116918: k = `r coll_clust$semi_clust$GSE116918$kNN`). 
-The quality of the cluster assignment was assessed by comparing the collagen clusters distribution and 'explained' clustering variances between the training TCGA datasets and the test cohorts (__Supplementary Figure S\@ref(fig:fig-clust-dev)C__). 
-Separation of the clusters was assessed by a visual inspection of the UMAP layout plots (method `plot()`, package [_clustTools_](https://github.com/PiotrTymoszuk/clustTools)) and heat maps of the mean levels of the clustering factors in the collagen clusters (__Figure 2AB__).
+* cluster separation measured by mean silhouette statistic [@Rousseeuw1987]
 
-Differences in the $log_2$-transformed collagen pathway gene expression between the collagen clusters were investigated by two-tailed T test with Cohen's d effect size statistic. 
-The comparison results are presented in __Supplementary Figure S\@ref(fig:fig-clusters)__ and __Supplementary Table S\@ref(tab:tab-cluster)__.
+* fraction of potentially misclassified observations (observations with negative silhouette widths) [@Rousseeuw1987]
+
+* explanatory performance gauged by fraction of explained clustering variance (ratio of the total between-cluster sum of squares to the total sum of squares) 
+
+* preservation of the nearest neighborhood (mean fraction of the five nearest neighbors placed in the same cluster) [@Venna2001]
+
+* cluster re-assignment accuracy in 5-fold cross-validation [@Lange2004; @Leng2014]. 
+Computation of those numeric statistics of clustering quality in a cross-validation setting was done with the methods `summary()` and `cv()` provided by the [_clustTools_](https://github.com/PiotrTymoszuk/clustTools) package.
+The cluster number choice was based on the bend of the peak of the average silhouette statistic [@Rousseeuw1987] (method `plot()`, package [_clustTools_](https://github.com/PiotrTymoszuk/clustTools), __Supplementary Figure S\@ref(fig:fig-clust-dev)B__). 
+By this means, two clusters of cancer samples were identified: 'collagen high' and 'collagen low' cancers.
+
+Assignment of cancers samples of the GSE54460, GSE70768, GSE70769, GSE220095, and DKFZ cohorts to the collagen clusters based on normalized $log_2$-transformed expression levels of the collagen-related genes was done with an inverse distance weighted k-nearest neighbor classifier (method `predict()`, package [_clustTools_](https://github.com/PiotrTymoszuk/clustTools)) [@Leng2014]. 
+The quality of the cluster assignment was assessed by comparing the collagen cluster distribution and numeric statistics of clustering quality described above the training TCGA data set and the test cohorts (__Supplementary Figure S\@ref(fig:fig-clust-dev)CD__). 
+In addition, separation of the clusters was assessed by a visual inspection of the UMAP layout plots (method `plot()`, package [_clustTools_](https://github.com/PiotrTymoszuk/clustTools)) and heat maps of the mean levels of the clustering factors in the collagen clusters (__Supplementary Figure S\@ref(fig:fig-clusters)__).
+
+Differences in the $log_2$-transformed collagen pathway gene expression between the collagen clusters were investigated by two-tailed T test with Cohen's d effect size statistic (__Supplementary Table S\@ref(tab:tab-cluster)__). 
 
 ## Clinical characteristic of the collagen clusters
 
-Differences in numeric clinical variables (age and PSA) between the collagen clusters were assessed by Mann-Whitney test with r effect size statistic. 
+Differences in numeric clinical variables (age and PSA) between the collagen clusters were assessed by Mann-Whitney test with r effect size statistic (`test_two_groups()`, [_microViz_](https://github.com/PiotrTymoszuk/microViz)).  
 Differences in qualitative clinical variables between the collagen clusters were investigated by $\chi^2$ test with Cramer's V effect size statistic (function `compare_variables()`, package [_ExDA_](https://github.com/PiotrTymoszuk/ExDA)). 
-The clinical characteristics of the collagen clusters are presented in __Figure 2CD__ and __Supplementary Table S\@ref(tab:tab-clinic)__). 
+The demographic and clinical characteristic of the collagen clusters is presented in __Supplementary Figure S\@ref(fig:fig-clust-tumor)__ and __Supplementary Table S\@ref(tab:tab-clinic)__.
 
 ## Non-malignant cell infiltration in the collagen clusters
 
-Non-malignant cell counts and non-malignant cell fractions in the cancer samples were predicted by the _MCP-counter_ [@Becht2016] and _xCell_ [@Aran2017] algorithms, respectively.
+Non-malignant cell counts and non-malignant cell fractions in the cancer samples were predicted by the _MCP Counter_ [@Becht2016] and _xCell_ [@Aran2017] algorithms, respectively.
 Differences in the predicted infiltration levels between the collagen clusters were investigated by Mann-Whitney test with r effect size statistic (function `compare_variables()`, package [_ExDA_](https://github.com/PiotrTymoszuk/ExDA)). 
-The analysis results are shown in __Figure 3A__, __Supplementary Figures S\@ref(fig:fig-mcp-infil)__ - __S\@ref(fig:fig-infil-xcell)__ and __Supplementary Tables S\@ref(tab:tab-mcp)__ - __S\@ref(tab:tab-xcell)__.
+Populations differing between the clusters with pFDR < 0.05 and at least weak effect size (r $\geq$ 0.1) were considered biologically relevant. 
+The analysis results are shown in __Supplementary Figure S\@ref(fig:fig-intiltration)__ and __Supplementary Table S\@ref(tab:tab-infiltration)__.
 
 ## Gene set variance analysis of Reactome pathway gene signatures
 
 ssGSEA scores [@Hanzelmann2013] of the Reactome pathway gene signatures were compared between the collagen clusters by two-tailed T test with Cohen's d effect size statistic. 
-Signatures found to be significantly regulated (pFDR < 0.05) with at least weak effect size (d $\geq$ 0.2) in at least four cohort were further investigated. 
-The analysis results are presented in __Figure 3B__, __Supplementary Figure S\@ref(fig:fig-top-gsva)__ and __Supplementary Table S\@ref(tab:tab-gsva)__.
+Signatures found to be significantly regulated (pFDR < 0.05) with at least weak effect size (d $\geq$ 0.2) in at least five cohorts were further investigated. 
+To get additional functional insight and for purposes of visualization, these common regulated signatures were classified by their co-expression patterns in the TCGA data set by unsupervised KMEANS clustering (function `kcluster()`, package [_clustTools_](https://github.com/PiotrTymoszuk/clustTools)). 
+The analysis results are presented in __Supplementary Figure S\@ref(fig:fig-biology)__ and __Supplementary Table S\@ref(tab:tab-gsva)__. 
 
-## Differential gene expression in the collagen clusters
+## Differential gene expression and GO enrichment analysis
 
 Differences in whole-transcriptome gene expression between the collagen clusters were investigated by FDR-corrected two-tailed T test with Cohen's d effect size statistic (function `test_two_groups()`, package [_microViz_](https://github.com/PiotrTymoszuk/microViz)). 
 Genes significantly differentially expressed between the clusters were identified by the significance cutoff (pFDR < 0.05) and at least weak effect size of the expression differences (d $\geq$ 0.2). 
-Percentages of the investigated transcriptomes found to be significantly differentially expressed between the collagen clusters are displayed in __Supplementary Figure S\@ref(fig:fig-dge-numbers)__. 
-Expression regulation estimates for the strongest up- and downregulated genes in collagen^high^ vs collagen^low^ cancers are presented in __Supplementary Figure S\@ref(fig:fig-top-dge)__. 
-Significantly differentially regulated genes are listed in __Supplementary Table S\@ref(tab:tab-dge)__.
+Genes found to be differentially regulated between the clusters are listed in __Supplementary Table S\@ref(tab:tab-dge)__.
 
-## Signaling pathway activity modulation in the collagen clusters
+Biological process GO enrichment within genes upregulated in each of the collagen high and collagen low clusters was analyzed with the _limma_ package _goana_ algorithm [@Young2010], re-implemented by the development package [_microViz_](https://github.com/PiotrTymoszuk/microViz) (function `GOana()`). 
+Enrichment p values were adjusted for multiple testing with the FDR method. 
+Odds ratio (OR) calculated for a GO term with the following formula served as a measure of effect size:
 
-Modulation of activity of KEGG-listed signaling pathways was predicted by the _SPIA_ algorithm (function `spia()`) [@Tarca2009] based on $log_2$ fold-regulation estimates of expression regulation for the significantly differentially regulated genes. 
-The `tA` parameter served as a measure of the predicted pathway activity (inhibited: tA < 0, activated: tA > 0). 
-Statistical significance of the activity modulation was assessed by the combined enrichment/perturbation p value corrected for multiple testing with the FDR method (pGFDR) [@Tarca2009]. 
-Common modulated signaling pathways were defined as signaling pathways predicted to be significantly activated or inhibited in at least four cohorts. 
-The analysis results are presented in __Figure 3C__ and __Supplementary Table S\@ref(tab:tab-signaling)__.
+$$OR_{GO} = \frac{N_{GO|DGE} \times N_{total}}{N_{GO|total} \times N_{DGE}}$$
+where $N_{GO|DGE}$ stands for the number of differentially regulated genes assigned to the GO term, 
+$N_{total}$ is the total number of investigated genes, 
+$N_{GO|total}$ is the number of investigated genes assigned to the GO term, and 
+$N_{DGE}$ stands for the number of differentially regulated genes. 
+GO terms found to be significantly enriched with at least weak effect size (pFDR < 0.05, OR $\geq$ 1.44) in at least five cohorts were further investigated. 
+For additional functional insight, such common enriched GO terms were subjected to multi-dimensional scaling and unsupervised KMEANS clustering with pairwise Wang distance as a measure of semantic similarity (functions `go_sem()` and `kcluster()`, packages _GOSemSim_, [_microViz_](https://github.com/PiotrTymoszuk/microViz) and [_clustTools_](https://github.com/PiotrTymoszuk/clustTools)) [@Yu2010]. 
+Results of the GO enrichment analysis are shown in __Supplementary Figure S\@ref(fig:fig-biology)__ and __Supplementary Table S\@ref(tab:tab-go-enrichment)__.
+
+## Transcriptional regulons and signaling pathway activity in the collagen clusters
+
+Modulation of transcriptional regulons, i.e. sets of genes whose expression is controlled by a common transcriptional factor, and activity of selected signaling pathways in collagen high cancers as compared with collagen low tumors were explored by linear modeling with the _collecTRI_ [@Muller-Dott2023] and _PROGENy_ [@Schubert2018] databases, respectively. 
+Liner models were constructed for whole-transcriptome effect sizes of gene regulation (Cohen's d, see: __Differential gene expression and GO enrichment analysis__) with the `run_ulm()` and `run_mlm()` tools from the _decoupleR_ package [@Badia-I-Mompel2022]. 
+In each case, linear model score (LM score) served as a metric of activity magnitude. 
+P values (LM score $\neq$ 0) were corrected for multiple testing with the FDR method. 
+Regulons and signaling pathways found to be significantly activated or inhibited in at least five cohorts were further discussed. 
+The analysis results are presented in __Supplementary Figure S\@ref(fig:fig-signaling)__,and __Supplementary Tables S\@ref(tab:tab-regulons)__ and __S\@ref(tab:tab-signaling)__.
 
 ## Activity of metabolic reactions in the collagen clusters
 
 Rules of assignment of genes to biochemical reactions were retrieved from the Recon2 human metabolism model available via the BiGG database [@King2016] and the R package _BiGGR_ [@Gavai2015]. 
-Estimates of differential expression for all available genes between the collagen clusters were calculated by two-tailed T test as describe above. 
+Estimates and standard errors of $log_2$ fold-regulation of expression for all available genes between the collagen clusters were calculated by two-tailed T test as described in __Differential gene expression and GO enrichment analysis__. 
 Estimates of biochemical pathway fold-regulation were computed by evaluation of the gene assignment rules in the Recon2 model. 
 The 'gene~A~ OR gene~B~' operator was interpreted as arithmetic mean of expression regulation estimates for the genes A and B. 
 The 'gene~A~ AND gene~B~' operator was interpreted as minimum of expression regulation estimates for the gene A and gene B [@Gavai2015]. 
-Standard deviation, 95% confidence intervals and p values for the predicted reaction regulation estimates were obtained by a Monte Carlo simulation with n = 1000 draws from normal distribution of gene expression regulation estimates (mean: expression regulation estimate, standard deviation: standard error of the expression regulation estimate) [@Gavai2015; @Pichler2023]. 
+Standard deviation, 95% confidence intervals and p values for the predicted reaction regulation estimates were obtained by a Monte Carlo simulation with n = 3000 draws from normal distribution of gene expression regulation estimates (mean: gene expression regulation estimate, standard deviation: standard error of the gene expression regulation estimate) [@Gavai2015; @Pichler2023]. 
 P values were corrected for multiple testing with the FDR method. 
-The analysis was done with the package _BiGGR_ [@Gavai2015] and the development package [_biggrExtra_](https://github.com/PiotrTymoszuk/biggrExtra) [@Pichler2023] (function `build_geneSBML()`). 
-Biochemical reactions predicted to be significantly modulated between the collagen clusters are listed in __Supplementary Table S\@ref(tab:tab-reactions)__.
+The analysis was done with the packages _BiGGR_ [@Gavai2015] and [_biggrExtra_](https://github.com/PiotrTymoszuk/biggrExtra) [@Pichler2023] (function `build_geneSBML()`). 
+Biochemical reactions predicted to be significantly activated or inhibited in the collagen high cluster as compared with the collagen low cluster are listed in __Supplementary Table S\@ref(tab:tab-reactions)__.
 
-Enrichment of significantly activated or inhibited biochemical reactions within the Recon model metabolic subsystems [@King2016] was investigated by FDR-corrected Fisher's exact test (function `suba()`, package [_biggrExtra_](https://github.com/PiotrTymoszuk/biggrExtra)). 
+Enrichment of significantly activated or inhibited biochemical reactions within the Recon model metabolic subsystems [@King2016] was investigated by comparing the frequency of significantly activated or inhibited reactions in the given subsystem with 10000 random samples from the total reaction pool (function `suba()`, package [_biggrExtra_](https://github.com/PiotrTymoszuk/biggrExtra)). 
 The magnitude of enrichment was assessed with OR defined for the $i$-th metabolic subsystem as follows: 
 
 $$OR_i = \frac{n_{regulated, i} \times n_{total}}{n_i \times n_{regulated}}$$
 
-where $n_{regulated, i}$ denotes the number of significantly regulated (activated or inhibited) biochemical reactions within the $i$-th metabolic subsystem, 
+where $n_{regulated, i}$ denotes the number of significantly activated or inhibited biochemical reactions within the $i$-th metabolic subsystem, 
 $n_{total}$ denotes the total number of investigated reactions, 
 $n_i$ denotes the number of metabolic reactions within the $i$-th metabolic subsystem, and 
-$n_{regulated}$ is the total number of significantly regulated biochemical reactions. 
-Common significantly activated or inhibited metabolic subsystems were identified as metabolic subsystems significantly activated or inhibited in at least four cohorts, with at least weak effect size defined as OR $\geq$ 1.44 [@Cohen2013] (__Figure 3D__, __Supplementary Table S\@ref(tab:tab-subsystems)__).
+$n_{regulated}$ is the total number of significantly activated or inhibited biochemical reactions. 
+Common significantly activated or inhibited metabolic subsystems were identified as metabolic subsystems significantly activated or inhibited in at least four cohorts, with at least weak effect size defined by OR $\geq$ 1.44 (__Supplementary Figure S\@ref(fig:fig-metabolism)__, __Supplementary Table S\@ref(tab:tab-subsystems)__). 
+
+## Survival analysis and transcriptional collagen score
+
+Biochemical relapse-free survival was modeled in the TCGA training cohort as a function of normalized $log_2$-transformed expression of the collagen-related genes of interest by multi-parameter Elastic Net Cox modeling [@Simon2011; @Zou2005]. 
+Of note, both first and second order terms were included in the Elastic Net model to account for possible non-linear association of gene expression with survival probability. 
+The optimal values of the shrinkage parameter $\lambda$ was found by tuning in 200 repeats 10-fold cross-validation and corresponded to the model with the lowest deviance (function `cv.glmnet()`, package _glmnet_) [@Friedman2010]. 
+The Elastic Net model was trained for the TCGA data set for the tuned $\lambda$ parameter with the `glmnet()` function from the _glmnet_ package. 
+The Transcriptional Collagen Score was defined as the linear predictor score of the Elastic Net model and was computed for the training TCGA cohort and the validation collectives GSE54460, GSE70768, GSE70769, GSE220095 and DKFZ with the `predict()` method. 
+Gene expression values used for calculation of the Transcriptional Collagen Score, i.e. non-zero coefficients of the Elastic Net model, are presented as hazard ratios (HR) in __Figure 3A__ and __Supplementary Table S\@ref(tab:tab-coll-score)__. 
+
+Performance of the Transcriptional Collagen Score at prediction of biochemical relapse-free survival was assessed by uni-variable Cox regression (functions `coxph()` and `as_coxex()`, packages _survival_ and [_coxExtensions_](https://github.com/PiotrTymoszuk/coxExtensions)) [@Therneau2000]. 
+The proportional hazard assumption of the Cox models was checked with the `summary(type = 'assumptions')` method, which implements the genuine `cox.zph()` algorithm [@Grambsch1994]. 
+Harrell's concordance index [@Harrell1996] and integrated Brier score [@Graf1999] were employed to investigate the overall concordance between the predicted and observed survival and to assess overall calibration (method `summary(type = 'fit')`, package [_coxExtensions_](https://github.com/PiotrTymoszuk/coxExtensions), __Figure 3B__ and __Supplementary Table S\@ref(tab:tab-coll-survival)__). 
+Statistical significance of differences in biochemical relapse-free survival between patients stratified by tertiles of the Transcriptional Collagen Score was determined by Peto-Peto test (functions `surv_fit()` and `surv_pvalue()`, package _survminer_, __Figure 3C__).
 
 ## Data and code availability
 
-Publicly available datasets were analyzed. 
-Cleared datasets used for analyses will be made available upon request to the corresponding author. 
+Publicly available data sets were analyzed. 
+Formatted data sets used for analyses will be made available upon request to the corresponding author. 
 The transcriptome R analysis pipeline is available from GitHub (https://github.com/PiotrTymoszuk/collagen_pca).
 
 \newpage
 
 # Supplementary Tables
 
-```{r tab-genes, tab.cap = 'Investigated collagen pathway genes and their classification.'}
+```{r tab-cohorts, tab.cap = 'Characteristic of the analyzed cohorts. Numeric variables are presented as medians with interquartile ranges (IQR) and ranges. Qualitative variables are presented as percentages of categories within the complete observation set.'}
 
-suppl_paper_tbl$genes %>% 
-  flextable %>% 
+flextable::flextable(suppl_paper_tbl$cohorts) %>% 
+  set_widths(c(3, rep(2.2, 6))) %>% 
+  merge_v(1) %>% 
+  footnote(1, 1, 
+           value = as_paragraph('PSA: prostate-specific antigen.'), 
+           part = 'header', 
+           ref_symbols = 'a') %>%
+  theme_vanilla
+
+```
+
+\newpage
+
+```{r tab-genes, tab.cap = 'Collagen-related genes and their classification.'}
+
+flextable::flextable(suppl_paper_tbl$genes) %>% 
   set_widths(widths = c(4.5, 3.5, 3)) %>% 
   italic(j = 2, part = 'body') %>% 
   merge_v(1) %>% 
@@ -242,6 +287,19 @@ suppl_paper_tbl$norm_tumor[1, 1] %>%
 
 ```
 
+\newpage
+
+```{r tab-gleason, tab.cap = 'Expression of the collagen pathway genes in cancer samples stratified by Gleason scores compared by one-way ANOVA with eta-square effect size statistic. P values were corrected for multiple testing with the false discovery rate method. log2-transformed expression values are presented as medians with interquartile ranges (IQR) and ranges. The table is available as a supplementary Excel file.'}
+
+suppl_paper_tbl$gleason[1, 1] %>% 
+  mutate(Cohort = '') %>% 
+  set_names(' ') %>% 
+  flextable %>% 
+  set_widths(16)
+
+```
+
+\newpage
 
 ```{r tab-cluster, tab.cap = "Expression of the cluster-defining collagen pathway genes in the collagen clusters of prostate cancer. Statistical significance was assessed by two-tailed T test with Cohen's d effect size statistic. P values were corrected for multiple testing with the false discovery rate method. log2-transformed expression values are presented as medians with interquartile ranges (IQR) and ranges. The table is available as a supplementary Excel file."}
 
@@ -258,14 +316,14 @@ suppl_paper_tbl$cluster[1, 1] %>%
 ```{r tab-clinic, tab.cap = 'Clinical characteristic of the collagen clusters. Numeric variables are presented as medians with interquartile ranges (IQR) and ranges. Nominal variables are presented as percentages and counts of categories within the cluster.'}
 
 flextable::flextable(suppl_paper_tbl$clinic) %>% 
-  set_widths(c(2.2, 3, rep(4, 2), 2.8, 2.8)) %>% 
-  merge_v(1:2) %>% 
+  set_widths(c(2.8, 3.5, 4, 4, 2.8, 2.8)) %>% 
+  merge_v(1) %>% 
   footnote(1, 2, 
            value = as_paragraph('PSA: prostate-specific antigen.'), 
            part = 'header', 
            ref_symbols = 'a') %>% 
   footnote(1, 5:6, 
-           value = as_paragraph("Categorical variables: \u03C7\u00B2 test with Cramer's V effec size statistic. Numeric variables: Mann-whitney test with r effect size statistic. P values corrected for multiple testing with the false discovery rate method."), 
+           value = as_paragraph('Qualitative variables: \u03C7\u00B2 test with Cramer V effect size statistic. Numeric variables: Mann-Whitney test with r effect size statistic. P values corrected for multiple testing with the false discovery rate.'), 
            part = 'header', 
            ref_symbols = 'b') %>% 
   theme_vanilla
@@ -274,9 +332,21 @@ flextable::flextable(suppl_paper_tbl$clinic) %>%
 
 \newpage
 
-```{r tab-mcp, tab.cap = 'Non-malignant cell numbers predicted for the collagen clusters by the MCP counter algorithm. Statistical significance was assessed by Mann-Whitney test with r effect size statistic. P values were corrected for multiple testing with the false discovery method. The table is available as a supplementary Excel file.'}
+```{r tab-infiltration, tab.cap = 'Non-malignant cell numbers predicted for the collagen clusters by the MCP Counter and xCell algorithms. Statistical significance was assessed by Mann-Whitney test with r effect size statistic. P values were corrected for multiple testing with the false discovery method. The table is available as a supplementary Excel file.'}
 
-suppl_paper_tbl$mcp[1, 1] %>% 
+suppl_paper_tbl$infiltration[1, 1] %>% 
+  mutate(Algorithm = '') %>% 
+  set_names(' ') %>% 
+  flextable %>% 
+  set_widths(16)
+
+```
+
+\newpage
+
+```{r tab-gsva, tab.cap = "Gene set variation analysis with the Reactome pathway gene signatures. Differences in ssGSEA scores between collagen high and collagen low cancers were investigated by two-tailed T test with Cohen's d effect size statistic. Results for signatures significantly regulated with at least weak effect size (d at least 0.2) in at least five cohorts are presented. P values were corrected for multiple testing with the false discovery rate method (FDR). The table is available as a supplementary Excel file."}
+
+suppl_paper_tbl$reactome[1, 1] %>% 
   mutate(Cohort = '') %>% 
   set_names(' ') %>% 
   flextable %>% 
@@ -284,27 +354,9 @@ suppl_paper_tbl$mcp[1, 1] %>%
 
 ```
 
-```{r tab-xcell, tab.cap = 'Non-maignant cell fractions predicted for the collagen clusters by the xCell algorithm. Statistical significance was assessed by Mann-Whitney test with r effect size statistic. P values were corrected for multiple testing with the false discovery method. The table is available as a supplementary Excel file.'}
+\newpage
 
-suppl_paper_tbl$xcell[1, 1] %>% 
-  mutate(Cohort = '') %>% 
-  set_names(' ') %>% 
-  flextable %>% 
-  set_widths(16)
-
-```
-
-```{r tab-gsva, tab.cap = "Gene set variation analysis with the Reactome pathway gene signatures. Differences in ssGSEA scores between collagen high and collagen low cancers were investigated by two-tailed T test with Cohen's d effect size statistic. Results for signatures significantly regulated with at least weak effect size (d at least 0.2) in at least four cohorts are presented. P values were corrected for multiple testing with the false discovery rate method (FDR). The table is available as a supplementary Excel file."}
-
-suppl_paper_tbl$gsva[1, 1] %>% 
-  mutate(Cohort = '') %>% 
-  set_names(' ') %>% 
-  flextable %>% 
-  set_widths(16)
-
-```
-
-```{r tab-dge, tab.cap = "Genes differentially expressed in the collagen high cluster as compared with collagen low cancers were identified by two-tailed T test with the 1.25-fold regulation cutoff and the Cohen's d effect size statistic of at least 0.2 (at least weak effect size). P values were corrected for multiple testing with the false discovery rate method (FDR). The table is available as a supplementary Excel file."}
+```{r tab-dge, tab.cap = "Genes differentially expressed in the collagen high cluster as compared with collagen low cancers were identified by two-tailed T test with the 1.25-fold regulation cutoff and the Cohen's d effect size statistic of 0.2 P values were corrected for multiple testing with the false discovery rate method (FDR). The table is available as a supplementary Excel file."}
 
 suppl_paper_tbl$dge[1, 1] %>% 
   mutate(Cohort = '') %>% 
@@ -314,7 +366,33 @@ suppl_paper_tbl$dge[1, 1] %>%
 
 ```
 
-```{r tab-signaling, tab.cap = 'Signaling pathway activity in the collagen clusters investigated by the SPIA algorithm. Results for signaling pathways significantly activated or inhibited in at least four cohorts are shown. The table is available as a supplementary Excel file.'}
+\newpage
+
+```{r tab-go-enrichment, tab.cap = 'Biological process gene ontology (GO) term enrichment within genes differentially regulated in the collagen clusters. The enrichment analysis was performed with goana tool, enrichment p values were corrected for multiple testing with the false discovery rate (FDR) method. Significant enrichment was defined by pFDR < 0.05 and odds ratio (OR) for enrichment within differentially regulated genes of at least 1.44. OR for enrichment within genes upregulated in the collagen high and collagen low clusters are presented for significant GO terms shared by at least five cohorts. The table is available as a supplementary Excel file.'}
+
+suppl_paper_tbl$go_enrichment[1, 1] %>% 
+  mutate(`Collagen cluster` = '') %>% 
+  set_names(' ') %>% 
+  flextable %>% 
+  set_widths(16)
+
+```
+
+\newpage
+
+```{r tab-regulons, tab.cap = 'Activity of transcriptional regulons in the collagen high cluster as compared with the collagen low cluster predicted by the collecTRI model. Regulon activity was estimated with uni-parameter linear modeling with whole-transcriptome effect sizes of differential gene expression, p values were corrected for multiple testing with the false discovery rate (FDR) method. Linear model scores are presented for regulons significantly activated or inhibited in at least five cohorts. The table is available as a supplementary Excel file.'}
+
+suppl_paper_tbl$regulons[1, 1] %>% 
+  mutate(Cohort = '') %>% 
+  set_names(' ') %>% 
+  flextable %>% 
+  set_widths(16)
+
+```
+
+\newpage
+
+```{r tab-signaling, tab.cap = 'Activity of signaling pathways in the collagen high cluster as compared with the collagen low cluster predicted by the PROGENy model. Pathway activity was estimated with multi-parameter linear modeling with whole-transcriptome effect sizes of differential gene expression. P values were corrected for multiple testing with the false discovery rate (FDR) method,  linear model scores serve as measures of pathway activity. The table is available as a supplementary Excel file.'}
 
 suppl_paper_tbl$signaling[1, 1] %>% 
   mutate(Cohort = '') %>% 
@@ -324,9 +402,11 @@ suppl_paper_tbl$signaling[1, 1] %>%
 
 ```
 
-```{r tab-reactions, tab.cap = 'Biochemical reactions predicted to be significantly activated in the collagen high as compared with collagen low cancers. Statistical significance was determined by a Monte Carlo simulation. P values were corrected for multiple testing with the false discovery rate method. The table is available as a supplementary Excel file.'}
+\newpage
 
-suppl_paper_tbl$reactions[1, 1] %>% 
+```{r tab-reactions, tab.cap = 'Biochemical reactions predicted to be significantly activated in collagen high as compared with collagen low cancers. Statistical significance was determined by a Monte Carlo simulation. P values were corrected for multiple testing with the false discovery rate (FDR) method. The table is available as a supplementary Excel file.'}
+
+suppl_paper_tbl$metabolism[1, 1] %>% 
   mutate(Cohort = '') %>% 
   set_names(' ') %>% 
   flextable %>% 
@@ -334,7 +414,9 @@ suppl_paper_tbl$reactions[1, 1] %>%
 
 ```
 
-```{r tab-subsystems, tab.cap = "Results of enrichment analysis for significantly activated and inhibited biochemical reaction within the Recon metabolism subsystem. Statistical significance was determined by Fisher's exact test corrected for multiple testing with the false discovery rate method (FDR). The table is available as a supplementary Excel file."}
+\newpage
+
+```{r tab-subsystems, tab.cap = 'Results of enrichment analysis for significantly activated and inhibited biochemical reactions within the Recon metabolism subsystem. Statistical significance was determined by random sampling from the entire reaction pool p values were corrected for multiple testing with the false discovery rate (FDR) method. Effect size of enrichment of the subsystem in significantly activated or inhibited reactions was measured by odds ratio (OR) statistic. The table is available as a supplementary Excel file.'}
 
 suppl_paper_tbl$subsystems[1, 1] %>% 
   mutate(Cohort = '') %>% 
@@ -346,160 +428,145 @@ suppl_paper_tbl$subsystems[1, 1] %>%
 
 \newpage
 
-# Supplementary Figures
+```{r tab-coll-score, tab.cap = 'Transcriptomic collagen score was established by Elastic Net Cox modeling of biochemical relapse-free survival in the TCGA cohort. Hazard ratios (HR) of the member genes are presented.'}
 
-```{r fig-norm-tumor, fig.width = figur::convert(suppl_paper_fig$norm_tumor, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$norm_tumor, to = 'in')$h, fig.cap = 'Expression of collagen pathway genes in the normal prostate and prostate cancer tissue.'}
+flextable::flextable(suppl_paper_tbl$coll_score) %>% 
+  set_widths(c(3, 3)) %>% 
+  italic(1) %>% 
+  theme_vanilla
+
+```
+
+\newpage
+
+```{r tab-coll-survival, tab.cap = 'Performance of the transcriptomic collagen score at prediction of biochemical relapse-free survival in the TCGA training cohort and validation collectives.'}
+
+flextable::flextable(suppl_paper_tbl$coll_survival) %>% 
+  set_widths(c(2.8, 3, 2.7, 2.7, 3, 3)) %>% 
+  merge_v(1) %>% 
+  theme_vanilla
+
+```
+
+\newpage
+
+# Supplementary Figures 
+
+```{r fig-norm-tumor, fig.width = figur::convert(suppl_paper_fig$norm_tumor, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$norm_tumor, to = 'in')$h, fig.cap = 'Expression of collagen-related genes in the normal prostate and prostate cancer tissue.'}
 
 suppl_paper_fig$norm_tumor$plot
 
 ```
 
-__Supplementary Figure S\@ref(fig:fig-norm-tumor). Expression of collagen pathway genes in the normal prostate and prostate cancer tissue.__ 
+__Supplementary Figure S\@ref(fig:fig-norm-tumor). Expression of collagen-related genes in the normal prostate and prostate cancer tissue.__ 
 
-_Differences in $log_2$-transformed expression of `r nrow(globals$genes_interest)` genes related to collagen metabolism between donor-matched pairs of the prostate cancer and benign tissue were assessed by paired T test with Cohen's effect size statistic in the GSE70768 and TCGA cohorts. P values were corrected for multiple testing with the false discovery rate (FDR) method._
+_Differences in $log_2$-transformed expression of `r nrow(globals$genes_interest)` collagen-related genes between donor-matched pairs of the prostate cancer and benign tissue were assessed by paired T test with Cohen's effect size statistic in the GSE70768 and TCGA cohorts. P values were corrected for multiple testing with the false discovery rate (FDR) method. Full analysis results are listed in Supplementary Table S\@ref(tab:tab-norm-tumor)_
 
 _(A) Numbers of significantly up- and downregulated genes in the tumor tissue as compared with the benign tissue in the investigated cohorts presented in Venn plots._
 
-_(B) Expression of the collagen pathway genes significantly regulated in both analyzed cohorts. Mean normalized $log_2$-transformed expression values are presented as lines. Tinted ribbons represent the 2 $\times$ SEM (standard error of the mean) intervals. Effect sizes and p values are indicated in the Y axis._
+_(B) Mean normalized $log_2$ expression of the collagen-related genes presented as lines. Tinted regions represent the 2 $\times$ SEM (standard error of the mean) intervals. Significant effects are highlighted with bold font in the Y axis. Numbers of tissue pairs are displayed in the plot captions._
 
 \newpage
 
-```{r fig-clust-dev, fig.width = figur::convert(suppl_paper_fig$clust_dev, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$clust_dev, to = 'in')$h, fig.cap = 'Semi-supervised clustering of prostate cancer samples in respect to expression of the collagen pathway genes.'}
+```{r fig-clust-dev, fig.width = figur::convert(suppl_paper_fig$clust_dev, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$clust_dev, to = 'in')$h, fig.cap = 'Semi-supervised clustering of prostate cancer samples in respect to expression of collagen-related genes.'}
 
 suppl_paper_fig$clust_dev$plot
 
 ```
 
-__Supplementary Figure S\@ref(fig:fig-clust-dev). Semi-supervised clustering of prostate cancer samples in respect to expression of the collagen pathway genes.__ 
+__Supplementary Figure S\@ref(fig:fig-clust-dev). Semi-supervised clustering of prostate cancer samples in respect to expression of collagen-related genes.__ 
 
-_Tumor samples in the TCGA training cohort were clustered in respect to normalized, $log_2$-transformed expression levels of the collagen pathway genes with the PAM (partition around medoids) algorithm with cosine distance metric. Two clusters were defined: collagen^low^ (low) and collagen^high^ (hi). Assignment of the tumor samples in the training GSE16560, GSE40272, GSE70768 and GSE70769 collectives to the collagen clusters was accomplished by an inverse distance-weighted k-nearest neighbor classifier._
+_Cancer samples in the TCGA training cohort (n = `r nrow(clust_globals$data$tcga)`) were clustered in respect to normalized, $log_2$-transformed expression levels of the collagen-related genes of interest with the PAM (partition around medoids) algorithm with cosine distance metric. Two clusters were defined: collagen low and collagen high. Assignment of the tumor samples in the training GSE54460 (n = `r nrow(clust_globals$data$gse54460)`), GSE70768 (n = `r nrow(clust_globals$data$gse70768)`), GSE70769 (n = `r nrow(clust_globals$data$gse70769)`), GSE220095 (n = `r nrow(clust_globals$data$gse220095)`), and DKFZ collective (n = `r nrow(clust_globals$data$dkfz)`) to the collagen clusters was accomplished by an inverse distance-weighted k-nearest neighbor classifier._
 
-_(A) Comparison of performance of several clustering algorithms (PAM: partition around medoids, HCL: hierarchical clustering/Ward D2 and KMEANS) and distance metrics (Euclidean, Manhattan, sum-of-squares and cosine) in the training TCGA cohort was measured by the amount of 'explained' clustering variance (ratio of the between-cluster sum of squares to the total sum of squares) and rate of correct cluster assignment in 10-fold cross-validation (CV). Number of complete observations and the clustering factors are shown next to the plot._
+_(A) Comparison of performance of several clustering algorithms (PAM: partition around medoids, HCL: hierarchical clustering/Ward D2 and KMEANS) and distance metrics (Euclidean, Manhattan, squared Euclidean and cosine) in 5-fold cross-validation of the TCGA data set gauged by mean silhouette width as a measure of cluster separation, fraction of observations with negative silhouette widths indicative of possible misclassification, explained clustering variance and fraction of misclassified 5-nearest neighbors, cluster assignment accuracy in the cross-validation folds. Note superior performance of the PAM/cosine algorithm used for definition of the collagen clusters._
 
-_(B) Determination of the cluster number for PAM/Manhattan distance algorithm in the TCGA cohort by the bend of the within-cluster sum of squares (WSS) (B) and the peak of the mean silhouette statistic (C)._
+_(B) Choice of cluster number (k = 2) for PAM/cosine clustering of cancer samples in the TCGA cohort motivated by the peak mean silhouette width statistic._
 
-_(C) Distribution of the collagen clusters (left panel) and performance of the PAM/cosine distance algorithm at semi-supervised clustering in the training cohort and the test collectives measured by the 'explained' clustering variance statistic (right panel). Numbers of complete observations are presented in the plot axes._
+_(C) Distribution of sizes of the collagen clusters in the TCGA training cohort and the validation collectives. Percentages of samples assigned to the collagen clusters are presented in a stack plot._
+
+_(D) Quality of collagen clusters in the training cohort (TCGA) and validation collectives. Cluster separation was assessed by mean silhouette width, misclassification rate is expressed as fraction of observations with negative silhouette widths. Explanatory performance was gauged by fraction of explained clustering variance. Neighborhood preservation was assessed by mean fraction of 5-nearest neighbors placed in different clusters._
 
 \newpage
 
-```{r fig-clusters, fig.width = figur::convert(suppl_paper_fig$clusters, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$clusters, to = 'in')$h, fig.cap = 'Expression of the collagen pathway genes in the collagen clusters of prostate cancers.'}
+```{r fig-clusters, fig.width = figur::convert(suppl_paper_fig$clusters, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$clusters, to = 'in')$h, fig.cap = 'Expression of the collagen-related genes in the collagen clusters of prostate cancers.'}
 
 suppl_paper_fig$clusters$plot
 
 ```
 
-__Supplementary Figure S\@ref(fig:fig-clusters). Expression of the collagen pathway genes in the collagen clusters of prostate cancers.__ 
+__Supplementary Figure S\@ref(fig:fig-clusters). Expression of the collagen-related genes in the collagen clusters of prostate cancers.__ 
 
-_Tumor samples were subjected to semi-supervised clustering in respect to the collagen pathway gene expression with the PAM algorithm with cosine distance metric (training: TCGA, test cohorts: GSE16560, GSE40272, GSE70768 and GSE70769). Statistical significance of differences in expression of normalized, $log_2$-transformed expression levels (Z-scores) between the collagen clusters were investigated by two-tailed T test with Cohen's d effect size statistic. P values were corrected for multiple testing with the false discovery rate method. Mean expression Z scores in the collagen^low^ (low) and collagen^high^ (hi) clusters are presented as thick lines. The tinted ribbons represent 2$\times$ SEM (standard error of the mean) intervals. The collagen pathway genes were grouped according to their biological function as proline turnover (Pro), collagen modification, extracellular matrix (ECM) component, ECM processing and adhesion (Adh.) protein genes. Significantly regulated genes are highlighted in bold. Numbers of samples in the clusters are indicated in the plot captions._
+_The collagen clusters of prostate cancer samples were developed by semi-supervised PAM clustering as presented in Supplementary Figure S\@ref(fig:fig-clust-dev). Results of comparison of levels of the cluster-defining factors between the collagen clusters are listed in Supplementary Table S\@ref(tab:tab-cluster)._
 
-\newpage
+_(A) Uniform manifold approximation and projection (UMAP) layout of normalized $log_2$-transformed expression values of the collagen-related genes utilized for definition of the collagen clusters. Each point represents a single cancer sample, cluster assignment is color-coded. Numbers of cancer samples in the collagen clusters are indicated in the figure legends._
 
-```{r fig-mcp-infil, fig.width = figur::convert(suppl_paper_fig$mcp_infil, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$mcp_infil, to = 'in')$h, fig.cap = 'MCP Counter estimates of non-malignant cell content in the collagen clusters.'}
-
-suppl_paper_fig$mcp_infil$plot
-
-```
-
-__Supplementary Figure S\@ref(fig:fig-mcp-infil). MCP Counter estimates of non-malignant cell content in the collagen clusters.__ 
-
-_Counts of non-malignant cells (CAF: cancer-associated fibroblast, EC: endothelial cells, T cells, CD8^+^ T cells, NK cells: natural killer cells, B cells, macrophages, monocytes, neutrophils and mDC: myeloid dendritic cells) in the prostate cancer samples were predicted by the MCP counter algorithm. Differences in cell content between the collagen^low^ (low) and collagen^high^ (hi) clusters were analyzed with Mann-Whitney test with r effect size statistic. P values were corrected for multiple testing with the false discovery rate method. Means of normalized cell counts in the collagen clusters are depicted as thick lines. Tinted ribbons represent the 2 $\times$ SEM (standard error of the mean) intervals. Effect sizes and p values are shown in the Y axes. Significant effects are highlighted in bold. Numbers of samples assigned to the clusters are indicated in the plot captions._
+_(B) Mean normalized $log_2$-transformed expression values of the cluster-defining collagen-related genes visualized in a heat map. The cluster-defining genes were classified by their biological function (Pro: proline metabolism, ECM: extracellular matrix, Adh.: adhesion)._
 
 \newpage
 
-```{r fig-infil-mcp, fig.width = figur::convert(suppl_paper_fig$infil_mcp, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$infil_mcp, to = 'in')$h, fig.cap = 'Counts of cancer-associated fibroblast and endothelial cell in tumor samples in the  collagen clusters predicted by the MCP counter algorithm.'}
+```{r fig-clust-tumor, fig.width = figur::convert(suppl_paper_fig$clust_tumor, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$clust_tumor, to = 'in')$h, fig.cap = 'Gleason score and pathological tumor stage in the collagen clusters.'}
 
-suppl_paper_fig$infil_mcp$plot
+suppl_paper_fig$clust_tumor$plot
 
 ```
 
-__Supplementary Figure S\@ref(fig:fig-infil-mcp). Counts of cancer-associated fibroblast and endothelial cell in tumor samples in the  collagen clusters predicted by the MCP counter algorithm.__ 
+__Supplementary Figure S\@ref(fig:fig-clust-tumor). Gleason score and pathological tumor stage in the collagen clusters.__ 
 
-_Counts of cancer associated fibroblasts (CAF, A) and endothelial cells (EC, B) in collagen^low^ (low) and collagen^high^ (hi) prostate cancers were predicted by the MCP counter algorithm. Differences between the collagen clusters were assessed by Mann-Whitney test with r effect size statistic. Cell counts were presented in violin plots with single observations visualized as points. Red diamonds and whiskers represent medians with interquartile ranges. Effect sizes and p values are displayed in the plot captions. Numbers of samples in the clusters are indicated in the X axes._
+_Differences in distribution of Gleason scores (A, 5 - 6, 7 and $\geq$ 8) and pathological tumor stages (B) between the collagen clusters were investigated by $\chi^2$ test with Cramer V effect size statistic. P values were corrected for multiple testing with the false discovery rate method. Percentages of samples assigned to the Gleason score strata or tumor stages within each cluster are shown in stack plots. Effect sizes and p values are displayed in the plot facets. Numbers of complete observations in the clusters are indicated in the Y axes. Full clinical and pathological characteristic of the collagen clusters is shown in Supplementary Table S\@ref(tab:tab-clinic)._
 
 \newpage
 
-```{r fig-infil-xcell, fig.width = figur::convert(suppl_paper_fig$infil_xcell, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$infil_xcell, to = 'in')$h, fig.cap = 'Fractions of cancer-associated fibroblast and endothelial cell in tumor samples in the  collagen clusters predicted by the xCell algorithm.'}
+```{r fig-intiltration, fig.width = figur::convert(suppl_paper_fig$infiltration, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$infiltration, to = 'in')$h, fig.cap = 'Cancer-associated fibroblasts and endothelial cell infiltration in the collagen clusters.'}
 
-suppl_paper_fig$infil_xcell$plot
+suppl_paper_fig$infiltration$plot
 
 ```
 
-__Supplementary Figure S\@ref(fig:fig-infil-xcell). Fractions of cancer-associated fibroblast and endothelial cell in tumor samples in the  collagen clusters predicted by the xCell algorithm.__ 
+__Supplementary Figure S\@ref(fig:fig-intiltration). Cancer-associated fibroblasts and endothelial cell infiltration in the collagen clusters.__ 
 
-_Fractions of cancer associated fibroblasts (CAF, A) and endothelial cells (EC, B) in the malignant tissue of collagen^low^ (low) and collagen^high^ (hi) prostate cancers were predicted by the xCell counter algorithm. Differences between the collagen clusters were assessed by Mann-Whitney test with r effect size statistic. Cell counts were presented in violin plots with single observations visualized as points. Red diamonds and whiskers represent medians with interquartile ranges. Effect sizes and p values are displayed in the plot captions. Numbers of samples in the clusters are indicated in the X axes._
+_Levels of cancer-associated fibroblasts (A) and endothelial cells (B) in the collagen clusters were predicted by the MCP Counter and xCell algorithms. Statistical significance of differences between the clusters was assessed by Mann-Whitney test with r effect size statistic. P values were corrected for multiple testing with the false discovery rate method. Median infiltration levels with interquartile ranges are visualized as boxes, whiskers span over 150% of the interquartile ranges. Points represent single cancer samples. Effect sizes and p values are displayed in the Y axes, significant effects are highlighted in bold. GSE54460: `r format_strata_n(ana_globals$n_numbers$gse54460)`, GSE70768: `r format_strata_n(ana_globals$n_numbers$gse70768)`, GSE70769: `r format_strata_n(ana_globals$n_numbers$gse70769)`, GSE220095: `r format_strata_n(ana_globals$n_numbers$gse220095)`, DKFZ: `r format_strata_n(ana_globals$n_numbers$dkfz)`, TCGA: `r format_strata_n(ana_globals$n_numbers$tcga)`. Results of the analysis for other cell populations are listed in Supplementary Table S\@ref(tab:tab-infiltration)._
 
 \newpage
 
-```{r fig-top-gsva, fig.width = figur::convert(suppl_paper_fig$top_gsva, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$top_gsva, to = 'in')$h, fig.cap = 'Gene set variation analysis results for representative Reactome pathway gene signatures differentiating between the collagen clusters.'}
+```{r fig-biology, fig.width = figur::convert(suppl_paper_fig$biology, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$biology, to = 'in')$h, fig.cap = 'Gene set variation analysis of Reactome pathway gene signatures and gene ontology term enrichment analysis for the collagen clusters.'}
 
-suppl_paper_fig$top_gsva$plot
+suppl_paper_fig$biology$plot
 
 ```
 
-__Supplementary Figure S\@ref(fig:fig-top-gsva). Gene set variation analysis results for representative Reactome pathway gene signatures differentiating between the collagen clusters.__ 
+__Supplementary Figure S\@ref(fig:fig-biology). Gene set variation analysis of Reactome pathway gene signatures and gene ontology term enrichment analysis for the collagen clusters.__ 
 
-_Gene set variation analysis of the collagen clusters was performed with the Reactome pathway gene signatures. Statistical significance for differences in signature single sample gene set enrichment analysis scores (ssGSEA) between the collagen clusters was determined by two-tailed T test with Cohen's d effect size statistic. P values were corrected for multiple testing with the false discovery rate method. Common regulated signatures were defined as signatures significantly regulated with at least weak effect size (d $\geq$ 0.2) in at least four cohorts (Supplementary Table S\@ref(tab:tab-gsva)). Mean ssGSEA scores in the clusters and cohorts for the top five strongest regulated signatures for each functional category are presented in a heat map._
-_ECM: extracellular matrix, GF: growth factor, GPCR: G protein-coupled receptor._
+_(A) Gene set variation analysis (GSVA) with Reactome pathway gene signatures. Statistical significance for differences in signature single sample gene set enrichment analysis scores (ssGSEA) between the collagen clusters was determined by two-tailed T test with Cohen's d effect size statistic. P values were corrected for multiple testing with the false discovery rate method. Mean ssGSEA scores in the clusters and cohorts for signatures significantly regulated in at least five cohorts with at least weak effect size (d $\geq$ 0.2) are presented in a heat map. Full analysis results are presented in Supplementary Table S\@ref(tab:tab-gsva). The common regulated gene signatures were classified in respect their co-expression patterns by KMEANS clustering; signature classification is indicated in the Y axis facets of the heat map (ECM: extracellular matrix, GF: growth factor, GPCR: G protein-coupled receptor)._
+
+_(B) Genes differentially expressed between the collagen clusters were identified by false discovery rate (FDR) corrected two-tailed T test with Cohen's d effect size statistic. Differentially expressed genes were defined by the pFDR < 0.05 and d $\geq$ 0.2 cutoffs (Supplementary Table \@ref(tab:tab-dge)). Biological process gene ontology (GO) enrichment within genes significantly unregulated in the collagen high and the collagen low clusters was investigated with the goana algorithm. Enrichment p values were adjusted for multiple testing with the FDR method, odds ratio of enrichment over the whole-transcriptome GO frequency served as an effect size statistic. GO terms significantly enriched with at least weak effect size (OR $\geq$ 1.44) in at least five cohorts were subjected to multi-dimensional scaling and unsupervised KMEANS clustering in respect to their semantic similarity. Multi-dimensional scaling layouts of Wang distances between the common enriched GO terms are presented. Each point represents a single GO term, GO cluster assignment is color coded. Complete results of the GO enrichment analysis are listed in Supplementary Table S\@ref(tab:tab-go-enrichment)._
 
 \newpage
 
-```{r fig-dge-numbers, fig.width = figur::convert(suppl_paper_fig$dge_numbers, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$dge_numbers, to = 'in')$h, fig.cap = 'Percentages of the analyzed transcriptome significantly up- and downregulated in collagen high vs collagen low cluster cancers.'}
+```{r fig-signaling, fig.width = figur::convert(suppl_paper_fig$signaling, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$signaling, to = 'in')$h, fig.cap = 'Transcriptional regulons and signaling pathway activity in the collagen clusters.'}
 
-suppl_paper_fig$dge_numbers$plot
+suppl_paper_fig$signaling$plot
 
 ```
 
-__Supplementary Figure S\@ref(fig:fig-dge-numbers). Percentages of the analyzed transcriptome significantly up- and downregulated in collagen high vs collagen low cluster cancers.__ 
+__Supplementary Figure S\@ref(fig:fig-signaling). Transcriptional regulons and signaling pathway activity in the collagen clusters.__ 
 
-_Genes significantly differentially regulated in collagen^high^ cancers (hi) as compared with collagen^low^ prostate tumors (low) were identified by false discovery rate corrected two-tailed T test (pFDR < 0.05) with Cohen's d effect size statistic (d $\geq$ 0.2). Percentages of significantly up- and downregulated genes are presented in bar plots. Total numbers of analyzed genes are indicated in the Y axes._
+_Differences in activity of transcriptional regulons (gene sets controlled by a common transcription factor, A) and signaling pathways (B) in the collagen high cluster as compared with the collagen low cluster were assessed by linear modeling with the collecTRI and PROGENy databases implemented by the decoupler algorithm. Linear model score (LM score) served as a measure of regulon or pathway activity, p values for significant modulation of activity (LM score $\neq$ 0) were corrected for multiple testing with the false discovery rate method. Full analysis results are listed in Supplementary Tables S\@ref(tab:tab-regulons) and S\@ref(tab:tab-signaling)._
+
+_(A) LM scores of top modulated transcriptional regulons found to be significantly activated or inhibited in at least five cohorts visualized as bubble plots. Point color codes for the regulation sign, point size codes for absolute value of the LM score. LM scores for regulon activity in particular cohorts are presented next to the data points._ 
+
+_(B) LM scores of signaling pathways found to be significantly activated or inhibited in at least five cohorts visualized as bubble plots. Point color codes for the regulation sign, point size codes for absolute value of the LM score. LM scores for regulon activity in particular cohorts are presented next to the data points._ 
 
 \newpage
 
-```{r fig-top-dge, fig.width = figur::convert(suppl_paper_fig$top_dge, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$top_dge, to = 'in')$h, fig.cap = 'Top strongest differentially expressed genes in the collagen high cluster as compared with collagen low cancers.'}
+```{r fig-metabolism, fig.width = figur::convert(suppl_paper_fig$metabolism, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$metabolism, to = 'in')$h, fig.cap = 'Metabolism in the collagen clusters.'}
 
-suppl_paper_fig$top_dge$plot
-
-```
-
-__Supplementary Figure S\@ref(fig:fig-top-dge). Top strongest differentially expressed genes in the collagen high cluster as compared with collagen low cancers.__ 
-
-_$log_2$ fold-regulation estimates of differences in expression between collagen^high^ (hi) and collagen^low^ (low) cancers with 95% confidence intervals for top 20 strongest up- and downregulated genes were presented in Forest plots. Numbers of samples in the clusters are displayed in the plot captions._
-
-\newpage
-
-```{r fig-reaction-counts, fig.width = figur::convert(suppl_paper_fig$reaction_counts, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$reaction_counts, to = 'in')$h, fig.cap = 'Numbers of significantly activated and inhibited biochemical reactions predicted for the collagen high cluster as compared with collagen low cancers.'}
-
-suppl_paper_fig$reaction_counts$plot
+suppl_paper_fig$metabolism$plot
 
 ```
 
-__Supplementary Figure S\@ref(fig:fig-reaction-counts). Numbers of significantly activated and inhibited biochemical reactions predicted for the collagen high cluster as compared with collagen low cancers.__ 
+__Supplementary Figure S\@ref(fig:fig-metabolism). Metabolism in the collagen clusters.__ 
 
-_Modulation of Recon2 model metabolic reactions in collagen^high^ cancers (hi) as compared with collagen^low^ tumors (low) was predicted by the BiGGR and biggrExtra algorithms based on whole-genome differential gene expression estimates. Statistical significance was determined by Monte Carlo simulation with n = 1000 draws from normal distributions of the gene expression regulation estimates. P values were corrected for multiple testing with the false discovery rate method. Percentages of predicted significantly activated and inhibited metabolic reactions are shown in bar plots. The total reaction number is displayed in the plot caption._
-
-\newpage
-
-```{r fig-faox, fig.width = figur::convert(suppl_paper_fig$faox, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$faox, to = 'in')$h, fig.cap = 'Activity of fatty acid oxidation and citric acid cycle reactions predicted for the collagen high cluster as compared with collagen low cancers.'}
-
-suppl_paper_fig$faox$plot
-
-```
-
-__Supplementary Figure S\@ref(fig:fig-faox). Activity of fatty acid oxidation and citric acid cycle reactions predicted for the collagen high cluster as compared with collagen low cancers.__ 
-
-_Regulation of reactions of the fatty acid oxidation (FAOX, A) and citric acid cycle (tri-carboxylic acid cycle/TCA, B) Recon subsystems in collagen^high^ cancers (hi) as compared with collagen^low^ tumors (low) was predicted by the BiGGR and biggrExtra algorithms based on whole-genome differential gene expression estimates. Statistical significance was determined by Monte Carlo simulation with n = 1000 draws from distributions of the gene expression estimates. P values were corrected for multiple testing with the false discovery rate method. Estimates of $log_2$ fold-regulation of reaction activity are presented in bar plots. Activity status is color coded. Numbers of significantly activated and inhibited reactions are displayed in the plot captions. Total reaction numbers in the investigated metabolic subsystem are indicated in the X axes._
-
-\newpage
-
-```{r fig-extrans, fig.width = figur::convert(suppl_paper_fig$extrans, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$extrans, to = 'in')$h, fig.cap = 'Activity of chondroitin synthesis and extracellular transport reactions predicted for the collagen high cluster as compared with collagen low cancers.'}
-
-suppl_paper_fig$extrans$plot
-
-```
-
-__Supplementary Figure S\@ref(fig:fig-extrans). Activity of chondroitin synthesis and extracellular transport reactions predicted for the collagen high cluster as compared with collagen low cancers.__ 
-
-_Regulation of reactions of the chondroitin synthesis (CS, A) and extracellular transport (ExTrans, B) Recon subsystems in collagen^high^ cancers (hi) as compared with collagen^low^ tumors (low) was predicted by the BiGGR and biggrExtra algorithms based on whole-genome differential gene expression estimates. Statistical significance was determined by Monte Carlo simulation with n = 1000 draws from distributions of the gene expression estimates. P values were corrected for multiple testing with the false discovery rate method. Estimates of $log_2$ fold-regulation of reaction activity are presented in bar plots. Activity status is color coded. Numbers of significantly activated and inhibited reactions are displayed in the plot captions. Total reaction numbers in the investigated metabolic subsystem are indicated in the X axes._
+_Modulation of Recon2 model metabolic reactions in collagen high tumors as compared with collagen low cancers was predicted by Monte Carlo simulation implemented by the BiGGR and biggrExtra algorithms based on whole-genome differential gene expression estimates (Supplementary Table \@ref(tab:tab-reactions)). Enrichment of significantly activated and significantly inhibited reactions in the Recon metabolic subsystems was assessed by comparing the observed frequency of the subsystem's significantly regulated reactions with 10000 random draws from the entire reaction pool. Enrichment p values were corrected for multiple testing with the false discovery rate method. Enrichment odds ratios (OR) for significantly enriched metabolic subsystems with at least weak effect size (OR $\geq$ 1.44)  shared by at least five cohorts are presented in a bubble plot. Point color codes for reaction modulation status, point sizes represent absolute values of OR. Points are labeled with their OR values. Full analysis results are presented in Supplementary Table S\@ref(tab:tab-subsystems)._
 
 \newpage
 
