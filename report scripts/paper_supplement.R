@@ -377,6 +377,116 @@
               w = 160, 
               h = 120)
   
+# Figure S9: survival, algorithm comparison ---------
+  
+  insert_msg('Figure S9: survival, algorithm comparison')
+  
+  suppl_paper_fig$surv_algos <- surv_plots$algorithm_stat_plots %>% 
+    map(~.x + 
+          scale_x_continuous(limits = c(0.5, 1)) + 
+          scale_y_continuous(limits = c(0.62, 1)) + 
+          theme(legend.position = 'none')) %>% 
+    c(., list(get_legend(surv_plots$algorithm_stat_plots[[1]]))) %>% 
+    plot_grid(plotlist = ., 
+              ncol = 2, 
+              align = 'hv', 
+              axis = 'tblr') %>% 
+    as_figure(label = 'figure_s9_survival_algorithm_comparison', 
+              ref_name = 'surv_algos', 
+              caption = paste('Comparison of performance of various machine', 
+                              'learning algorithms at prediction of biochemical', 
+                              'relapse-free survival with expression of the', 
+                              'collagen-related genes.'), 
+              w = 180, 
+              h = 180)
+  
+# Figure S10: univariable survival: Volcano plots --------
+  
+  insert_msg('Figure S10: univariable survival, volcano plots')
+  
+  suppl_paper_fig$surv_uni_volcano <- rfs_cut$volcano_plots %>% 
+    map(~.x + theme(legend.position = 'none')) %>% 
+    c(., list(get_legend(rfs_cut$volcano_plots[[1]]))) %>% 
+    plot_grid(plotlist = ., 
+              ncol = 2, 
+              align = 'hv', 
+              axis = 'tblr') %>% 
+    as_figure(label = 'figure_s10_univariable_survival_volcano', 
+              ref_name = 'surv_uni_volcano', 
+              caption = paste('Differences in biochemical relapse-free', 
+                              'survival between high and low expressors of the', 
+                              'collagen-related genes.'), 
+              w = 180, 
+              h = 180)
+  
+# Figure S11: Forest plot with HR for the common survival markers --------
+  
+  insert_msg('Figure 11: univariable survival, common genes, Forest plot')
+  
+  suppl_paper_fig$surv_uni_forest <- 
+    plot_grid(rfs_cut$common_forest_plot + 
+                theme(legend.position = 'none')) %>% 
+    as_figure(label = 'figure_s11_univariable_survival_common_markers', 
+              ref_name = 'surv_uni_forest', 
+              caption = paste('Collagen-related transcriptional markers of', 
+                              'biochemical relapse risk shared by all', 
+                              'investigated cohorts.'), 
+              w = 180, 
+              h = 230)
+  
+# Figures S12 - S14: Kaplan-Meier plots for the common survival markers ---------
+  
+  insert_msg('Figures S12 - S14: Kaplan-Meier plots, common survival markers')
+  
+  suppl_paper_fig[c('surv_uni_detail1', 
+                    'surv_uni_detail2', 
+                    'surv_uni_detal3')] <- 
+    list(rfs_cut$km_plots[c("COL1A1", "COL3A1", "COL5A2")], 
+         rfs_cut$km_plots[c("COL11A1", "COL11A2", "LOXL1", "SERPINH1")], 
+         rfs_cut$km_plots[c("COL4A6", "DST", "LAMB3", "PCOLCE2")]) %>% 
+    map(unlist, recursive = FALSE) %>% 
+    map(map, 
+        ~.x + 
+          theme(legend.position = 'none',
+                axis.text.x = element_text(size = 7), 
+                axis.text.y = element_text(size = 7), 
+                axis.title = element_text(size = 7), 
+                plot.subtitle = element_text(size = 7))) %>% 
+    map2(., list(c('A', '', '', 'B', '', '', 'C', '', ''), 
+                 c('A', '', '', 'B', '', '', 'C', '', '', 'D', '', ''), 
+                 c('A', '', '', 'B', '', '', 'C', '', '', 'D', '', '')), 
+         ~plot_grid(plotlist = .x, 
+                   ncol = 3, 
+                   align = 'hv', 
+                   labels = .y, 
+                   label_size = 10)) %>% 
+    map(~plot_grid(.x, 
+                   get_legend(rfs_cut$km_plots[[1]][[1]] + 
+                                labs(color = 'Expressors') + 
+                                theme(legend.position = 'bottom')), 
+                   nrow = 2, 
+                   rel_heights = c(0.9, 0.1)))
+  
+  suppl_paper_fig[c('surv_uni_detail1', 
+                    'surv_uni_detail2', 
+                    'surv_uni_detal3')] <- 
+    suppl_paper_fig[c('surv_uni_detail1', 
+                      'surv_uni_detail2', 
+                      'surv_uni_detal3')] %>% 
+    list(x = ., 
+         label = c('figure_s12_univariable_survival_detail', 
+                   'figure_s13_univariable_survival_detail', 
+                   'figure_s14_univariable_survival_detail'), 
+         ref_name = names(.), 
+         caption = paste('Differences in biochemical relaspse-free survival', 
+                         'between high and low gene expressors:', 
+                         c('_COL1A1_, _COL3A1_, and _COL5A2_.', 
+                           '_COL11A1_, _COL11A2_, _LOXL1_, and _SERPINH1_.', 
+                           '_COL4A6_, _DST_, _LAMB3_, and _PCOLCE2_.')), 
+         h = c(175, 230, 230)) %>% 
+    pmap(as_figure, 
+         w = 180)
+  
 # saving the figures ------
   
   insert_msg('Saving the figures')

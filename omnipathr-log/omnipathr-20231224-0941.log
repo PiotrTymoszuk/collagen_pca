@@ -1,0 +1,38 @@
+[2023-12-24 09:41:05] [INFO]    [OmnipathR] Welcome to OmnipathR!
+[2023-12-24 09:41:06] [TRACE]   [OmnipathR] Reading JSON from `C:\Users\piotr\AppData\Local\cache\OmnipathR/cache.json` (encoding: UTF-8).
+[2023-12-24 09:41:06] [TRACE]   [OmnipathR] JSON validation successful: TRUE
+[2023-12-24 09:41:06] [INFO]    [OmnipathR] Initialized cache: `C:\Users\piotr\AppData\Local\cache\OmnipathR`.
+[2023-12-24 09:41:06] [TRACE]   [OmnipathR] Reading JSON from `C:/Users/piotr/Documents/R/win-library/4.0/OmnipathR/db/db_def.json` (encoding: UTF-8).
+[2023-12-24 09:41:06] [TRACE]   [OmnipathR] JSON validation successful: TRUE
+[2023-12-24 09:41:06] [TRACE]   [OmnipathR] Reading JSON from `C:/Users/piotr/Documents/R/win-library/4.0/OmnipathR/internal/magic_bytes.json` (encoding: UTF-8).
+[2023-12-24 09:41:06] [TRACE]   [OmnipathR] JSON validation successful: TRUE
+[2023-12-24 09:41:06] [TRACE]   [OmnipathR] Reading JSON from `C:/Users/piotr/Documents/R/win-library/4.0/OmnipathR/internal/urls.json` (encoding: UTF-8).
+[2023-12-24 09:41:06] [TRACE]   [OmnipathR] JSON validation successful: TRUE
+[2023-12-24 09:41:07] [TRACE]   [OmnipathR] Reading JSON from `C:/Users/piotr/Documents/R/win-library/4.0/OmnipathR/internal/id_types.json` (encoding: UTF-8).
+[2023-12-24 09:41:07] [TRACE]   [OmnipathR] JSON validation successful: TRUE
+[2023-12-24 09:41:08] [WARN]    [OmnipathR] [decoupleR] Failed to check the list of available resources in OmniPath. Proceeding anyways.
+[2023-12-24 09:41:08] [INFO]    [OmnipathR] Loading database `Ensembl and OMA organism names`.
+[2023-12-24 09:41:08] [INFO]    [OmnipathR] Looking up in cache `https://www.ensembl.org/info/about/species.html`: key=7332486db7400730697234bad76ca0c8e4d00799, latest version=1.
+[2023-12-24 09:41:08] [TRACE]   [OmnipathR] Cache file path: C:\Users\piotr\AppData\Local\cache\OmnipathR/7332486db7400730697234bad76ca0c8e4d00799-1.html
+[2023-12-24 09:41:09] [TRACE]   [OmnipathR] Looking up in cache: `https://omabrowser.org/All/oma-species.txt`.
+[2023-12-24 09:41:09] [TRACE]   [OmnipathR] Loaded data from RDS `C:\Users\piotr\AppData\Local\cache\OmnipathR/30e690cbb55dfc63b5903ab337f34ffc2f4be397-1.rds`.
+[2023-12-24 09:41:09] [INFO]    [OmnipathR] Loaded database `Ensembl and OMA organism names`.
+[2023-12-24 09:41:10] [WARN]    [OmnipathR] Accessing `PROGENy` as a static table: this is not the recommended way to access OmniPath data; it is only a backup plan for situations when our server or your computer is experiencing issues.
+[2023-12-24 09:41:11] [TRACE]   [OmnipathR] Looking up in cache: `http://no-tls.static.omnipathdb.org/resources/annotations_PROGENy_9606.tsv.gz`
+[2023-12-24 09:41:11] [INFO]    [OmnipathR] Cache record does not exist: `http://no-tls.static.omnipathdb.org/resources/annotations_PROGENy_9606.tsv.gz`
+[2023-12-24 09:41:11] [TRACE]   [OmnipathR] Attempting `http://no-tls.static.omnipathdb.org/resources/annotations_PROGENy_9606.tsv.gz`
+[2023-12-24 09:41:11] [INFO]    [OmnipathR] Retrieving URL: `http://no-tls.static.omnipathdb.org/resources/annotations_PROGENy_9606.tsv.gz`
+[2023-12-24 09:41:11] [TRACE]   [OmnipathR] Attempt 1/3: `http://no-tls.static.omnipathdb.org/resources/annotations_PROGENy_9606.tsv.gz`
+[2023-12-24 09:41:13] [INFO]    [OmnipathR] Successfully retrieved: `http://no-tls.static.omnipathdb.org/resources/annotations_PROGENy_9606.tsv.gz`
+[2023-12-24 09:41:13] [TRACE]   [OmnipathR] Reading JSON from `C:\Users\piotr\AppData\Local\cache\OmnipathR/cache.json` (encoding: UTF-8).
+[2023-12-24 09:41:13] [TRACE]   [OmnipathR] JSON validation successful: TRUE
+[2023-12-24 09:41:13] [TRACE]   [OmnipathR] Reading JSON from `C:\Users\piotr\AppData\Local\cache\OmnipathR/cache.json` (encoding: UTF-8).
+[2023-12-24 09:41:13] [TRACE]   [OmnipathR] JSON validation successful: TRUE
+[2023-12-24 09:41:13] [INFO]    [OmnipathR] Cache item `103f85125e0134e3d65e4e63d22c339270d103e8` version 1: status changed from `unknown` to `started`.
+[2023-12-24 09:41:13] [TRACE]   [OmnipathR] Exporting object to RDS: `C:\Users\piotr\AppData\Local\cache\OmnipathR/103f85125e0134e3d65e4e63d22c339270d103e8-1.rds`.
+[2023-12-24 09:41:16] [TRACE]   [OmnipathR] Exported RDS to `C:\Users\piotr\AppData\Local\cache\OmnipathR/103f85125e0134e3d65e4e63d22c339270d103e8-1.rds`.
+[2023-12-24 09:41:16] [INFO]    [OmnipathR] Download ready [key=103f85125e0134e3d65e4e63d22c339270d103e8, version=1]
+[2023-12-24 09:41:16] [TRACE]   [OmnipathR] Reading JSON from `C:\Users\piotr\AppData\Local\cache\OmnipathR/cache.json` (encoding: UTF-8).
+[2023-12-24 09:41:16] [TRACE]   [OmnipathR] JSON validation successful: TRUE
+[2023-12-24 09:41:16] [INFO]    [OmnipathR] Cache item `103f85125e0134e3d65e4e63d22c339270d103e8` version 1: status changed from `started` to `ready`.
+[2023-12-24 09:41:16] [SUCCESS] [OmnipathR] Downloaded 700239 annotation records.

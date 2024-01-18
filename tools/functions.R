@@ -13,6 +13,7 @@
   library(stringi)
   library(rlang)
   library(rstatix)
+  library(ggrepel)
 
 # data import ------
 
@@ -1059,92 +1060,238 @@
                             exchange(variable2, dict)))
     
   }
+
+# Survival analysis --------
   
-# Clinical testing result plotting, collagen genes and score -------
-  
-  plot_clinical_correlation <- function(data, 
-                                        test_results, 
-                                        point_color = 'steelblue') {
+  cut_tertiles <- function(x) {
     
-    ## draws a series of scatter plots visualizing correlation between
-    ## variables
+    terts <- quantile(x, c(1/3, 2/3), na.rm = TRUE)
     
-    list(variables = map2(test_results$variable1, 
-                          test_results$variable2, c), 
-         plot_title = test_results$plot_title, 
-         plot_subtitle = test_results$plot_cap, 
-         y_lab = test_results$y_lab, 
-         x_lab = test_results$x_lab) %>% 
-      pmap(function(variables, 
-                    plot_title,
-                    plot_subtitle, 
-                    y_lab, 
-                    x_lab) data[variables] %>% 
-             filter(complete.cases(.)) %>% 
-             plot_correlation(variables = variables, 
-                              type = 'correlation', 
-                              point_color = point_color, 
-                              plot_title = plot_title, 
-                              plot_subtitle = plot_subtitle, 
-                              y_lab = y_lab, 
-                              x_lab = x_lab, 
-                              cust_theme = globals$common_theme)) %>% 
-      map(~.x + 
-            theme(plot.tag = element_blank(), 
-                  axis.title.y = element_markdown(), 
-                  plot.title = element_markdown())) %>% 
-      set_names(map2_chr(test_results$variable1, 
-                         test_results$variable2, 
-                         paste, sep = '_'))
+    cuts <- c(-Inf, terts, Inf)
+    
+    cut(x, cuts, c('low', 'int', 'high'))
     
   }
   
-  plot_clinical_violin <- function(data, 
-                                   split_factor, 
-                                   variables, 
-                                   cohort_name, 
-                                   test_results, 
-                                   dict = coll_clinic$resp_labs, 
-                                   palette = 'Blues', 
-                                   x_lab = NULL) {
+  plot_reg_cox_tuning <- function(data, 
+                                  best_tune, 
+                                  plot_title = NULL, 
+                                  x_lab = expression(lambda), 
+                                  y_lab = 'model deviance, CV') {
     
-    ## plots a series of violin plots
+    ## plots for the process of lambda tuning
     
     data <- data %>% 
-      filter(!is.na(.data[[split_factor]]))
+      mutate(best = ifelse(cvm == min(cvm), 
+                           'yes', 'no'))
     
-    list(variable = variables, 
-         plot_title = ifelse(variables == 'collagen_score', 
-                             paste('<b>Collagen Score, ', 
-                                   globals$study_labels[[cohort_name]], 
-                                   '</b>'), 
-                             paste('<b><em>', 
-                                   exchange(variables, dict), 
-                                   '</em>, ', 
-                                   globals$study_labels[[cohort_name]], 
-                                   '</b>')), 
-         plot_subtitle = test_results$plot_cap, 
-         y_lab = ifelse(variables == 'collage_score', 
-                        'Collagen Score', 
-                        paste('<em>', 
-                              exchange(variables, dict), 
-                              '</em>, log<sub>2</sub> expression'))) %>% 
-      future_pmap(plot_variable, 
-                  data, 
-                  split_factor = split_factor, 
-                  type = 'violin', 
-                  cust_theme = globals$common_theme, 
-                  x_lab = x_lab, 
-                  x_n_labs = TRUE, 
-                  .options = furrr_options(seed = TRUE)) %>% 
-      map(~.x + 
-            scale_fill_brewer(palette = palette) + 
-            theme(plot.title = element_markdown(), 
-                  axis.title.y = element_markdown())) %>% 
-      set_names(variables)
+    data %>% 
+      ggplot(aes(x = lambda, 
+                 y = cvm, 
+                 fill = best)) + 
+      geom_point(shape = 21, 
+                 size = 2) + 
+      scale_fill_manual(values = c(no = 'steelblue', 
+                                   yes = 'coral3'), 
+                        name = 'best tune') + 
+      globals$common_theme + 
+      labs(title = plot_title, 
+           subtitle = paste('Best tune: \u03BB =', 
+                            signif(best_tune$lambda[1], 3)), 
+           x = x_lab,
+           y = y_lab)
     
   }
-
+  
+  plot_surv_stats <- function(stats, 
+                              plot_title = 'Transcriptional Collagen Score, RFS prediction', 
+                              plot_subtitle = 'Ridge Cox algorithm', 
+                              x_lab = 'C-index', 
+                              y_lab = '1 - IBS', 
+                              palette = surv_globals$model_colors, 
+                              labels = surv_globals$study_labels, 
+                              label_variable = 'cohort', 
+                              txt_size = 2.75, 
+                              color_variable = 'dataset') {
+    
+    ## a scatter plot of 1 - IBS and C-index
+    ## cohort type is color-coded
+    
+    stats %>% 
+      mutate(!!label_variable := labels[.data[[label_variable]]]) %>% 
+      ggplot(aes(x = c_index, 
+                 y = 1 - ibs_model, 
+                 fill = .data[[color_variable]], 
+                 color = .data[[color_variable]])) + 
+      geom_vline(xintercept = 0.5, 
+                 linetype = 'dashed') +
+      geom_hline(yintercept = 0.75, 
+                 linetype = 'dashed') + 
+      geom_point(size = 2, 
+                 shape = 21, 
+                 color = 'black') + 
+      geom_text_repel(aes(label = .data[[label_variable]]), 
+                      size = txt_size, 
+                      show.legend = FALSE) + 
+      scale_fill_manual(values = palette, 
+                        name = '') + 
+      scale_color_manual(values = palette, 
+                         name = '') + 
+      globals$common_theme + 
+      labs(title = plot_title, 
+           subtitle = plot_subtitle, 
+           x = x_lab, 
+           y = y_lab)
+    
+  }
+  
+  plot_tertile_km <- function(fit, 
+                              n_numbers, 
+                              p_value, 
+                              palette = surv_globals$tertile_colors, 
+                              plot_title = NULL, 
+                              x_lab = 'Relapse-free survival, months',
+                              legend_title = 'Score tertile', 
+                              txt_size = 2.75) {
+    
+    ## Kaplan-Meier plots for tertiles of a transcriptional score
+    
+    plot_subtitle <- paste0('total: n =', sum(n_numbers$n_total), 
+                            ', events: n = ', sum(n_numbers$n_events))
+    
+    scale_labs <- n_numbers %>% 
+      mutate(scale_lab = paste0(score_cuts, '\ntotal: n = ', 
+                                n_total, '\nevents: n = ', 
+                                n_events, '\n'))
+    
+    scale_labs <- set_names(scale_labs$scale_lab, 
+                            as.character(scale_labs$score_cuts))
+    
+    
+    km_plot <- ggsurvplot(fit = fit, 
+                          pval = p_value, 
+                          pval.size = txt_size, 
+                          pval.coord = c(0.01, 0.05))
+    
+    km_plot$plot + 
+      scale_color_manual(values = unname(palette),
+                         labels = unname(scale_labs), 
+                         name = legend_title) +
+      globals$common_theme + 
+      theme(legend.position = 'bottom') + 
+      labs(title = plot_title, 
+           subtitle = plot_subtitle, 
+           x = x_lab)
+    
+  }
+  
+  plot_surv_importance <- function(data, 
+                                   imp_stat = 'coef', 
+                                   n_top = NULL, 
+                                   form = c('bar', 'bubble'), 
+                                   labeller = c(positive = 'unfavorable', 
+                                                negative = 'favorable', 
+                                                ns = 'ns'), 
+                                   plot_title = 'Transcriptional Collagen Score, variable importance', 
+                                   plot_subtitle = 'Ridge Cox regression', 
+                                   size_title = 'abs(log HR)', 
+                                   max_size = 5,
+                                   x_lab = expression('log HR'[Ridge]), 
+                                   line_color = 'black', 
+                                   palette = c(positive = 'firebrick', 
+                                               negative = 'steelblue', 
+                                               ns = 'gray70')) {
+    
+    ## a bar or bubble plot of variable importance stats
+    
+    form <- match.arg(form, c('bar', 'bubble'))
+    
+    data <- data %>% 
+      mutate(regulation = ifelse(.data[[imp_stat]] > 0, 'positive', 
+                                 ifelse(.data[[imp_stat]]< 0, 'negative', 'ns')),
+             regulation = factor(regulation, c('positive', 'negative', 'ns')), 
+             variable = stri_replace(variable, 
+                                     fixed = '_sq', 
+                                     replacement = '\u00B2'))
+    
+    if(!is.null(n_top)) {
+      
+      data <- data %>% 
+        blast(regulation) %>% 
+        map_dfr(top_n, n = n_top, abs(.data[[imp_stat]]))
+      
+    }
+    
+    if(form == 'bar') {
+      
+      imp_plot <- data %>% 
+        ggplot(aes(x = .data[[imp_stat]], 
+                   y = reorder(variable, .data[[imp_stat]]), 
+                   fill = regulation)) + 
+        geom_bar(stat = 'identity', 
+                 color = line_color) 
+      
+    } else {
+      
+      imp_plot <- data %>% 
+        ggplot(aes(x = .data[[imp_stat]], 
+                   y = reorder(variable, .data[[imp_stat]]), 
+                   fill = regulation, 
+                   size = abs(.data[[imp_stat]]))) + 
+        geom_point(shape = 21) + 
+        scale_size_area(max_size = max_size, 
+                        name = size_title)
+      
+    }
+    
+    imp_plot + 
+      facet_grid(regulation ~ ., 
+                 scales = 'free', 
+                 space = 'free', 
+                 labeller = as_labeller(labeller)) + 
+      scale_fill_manual(values = palette) + 
+      globals$common_theme + 
+      theme(axis.title.y = element_blank(), 
+            axis.text.y = element_text(face = 'italic')) + 
+      labs(title = plot_title, 
+           subtitle = plot_subtitle,
+           x = x_lab)
+    
+  }
+  
+  hr_from_cut <- function(survcut_obj) {
+    
+    ## fits a Cox PH model to expression data stratified by the optimal cutoff
+    ## used to identify favorable and unfavorable markers.
+    ## For this reason we're not carrying much about assumptions
+    
+    cox_data <- survcut_obj %>% 
+      model.frame %>% 
+      select(rfs_months, relapse, ends_with('_strata'))
+    
+    cox_model <- coxph(Surv(rfs_months, relapse) ~ ., 
+                       data = cox_data)
+    
+    log_hr <- coef(cox_model)
+    
+    log_hr_ci <- confint(cox_model)
+    
+    tibble(beta = log_hr, 
+           beta_lower_ci = log_hr_ci[1], 
+           beta_upper_ci = log_hr_ci[2], 
+           hr = exp(log_hr), 
+           hr_lower_ci = exp(log_hr_ci)[1], 
+           hr_upper_ci = exp(log_hr_ci)[2]) %>% 
+      mutate(significant = ifelse(all(log_hr_ci > 0) | all(log_hr_ci < 0), 
+                                  'yes', 'no'), 
+             marker = ifelse(significant == 'no', 'ns', 
+                             ifelse(beta > 0, 'unfavorable', 
+                                    ifelse(beta < 0, 'favorable', 'ns'))), 
+             marker = factor(marker, c('unfavorable', 'favorable', 'ns'))) %>% 
+      select(-significant)
+    
+  } 
+  
   
 # gene, GO and signature similarity -----
   

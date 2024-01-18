@@ -84,15 +84,17 @@
   
 # Treatment of genes used for clustering with COMBAT -------
   
-  insert_msg('COMBAT for the clustering genes')
+  insert_msg('COMBAT for the collagen-related genes')
   
   ## done only on request: 
-  ## abstaining from the batch correction since it distorts 
+  ## abstaining from the batch correction for clustering since it distorts 
   ## the gene co-expression patterns (nearest neighbors)
   ## as investigated by MDS and PCA during exploratory data analysis
+  ## but kept for modeling (cohort pooling)
   
-  #source_all('./import scripts/combat.R', 
-   #          message = TRUE, crash = TRUE)
+  access_cache(cache_path = './data/combat.RData',
+               script_path = './import scripts/combat.R', 
+               message = 'Loading cached COMBAT results')
 
 # END -----
   

@@ -457,48 +457,136 @@
                             'The table is available as a supplementary', 
                             'Excel file.'))
   
-# Table S15: transcriptomic collagen score ------
+# Table S15: tuning of transcriptomic survival models ------
   
-  insert_msg('Table S15: Transcriptomic collagen score')
+  insert_msg('Table S15: tuning of transcriptomic survival models')
   
-  suppl_paper_tbl$coll_score <- coll_score$coefs %>% 
-    mutate(variable = stri_replace(variable, 
-                                   fixed = '_sq', 
-                                   replacement = '\u00B2')) %>% 
-    select(variable, exp_coef) %>% 
-    set_names('Variable', 'HR') %>% 
+  suppl_paper_tbl$tuning <- 
+    list(ridge = ridge_surv$opt_lambda["lambda"] %>% 
+           map_dfc(signif, 3), 
+         elnet = elnet_surv$opt_lambda["lambda"] %>% 
+           map_dfc(signif, 3), 
+         lasso = lasso_surv$opt_lambda["lambda"] %>% 
+           map_dfc(signif, 3), 
+         svm = svm_surv$tuning$best_tune[c("type", 
+                                           "gamma.mu", 
+                                           "kernel")], 
+         rf = rf_surv$tuning$best_tune[c("mtry", 
+                                         "splitrule", 
+                                         "nsplit", 
+                                         "nodesize")], 
+         gbm = gbm_surv$tuning$best_tune[c("n.trees", 
+                                           "shrinkage", 
+                                           "interaction.depth", 
+                                           "n.minobsinnode")]) %>% 
+    map(t) %>% 
+    map(as.data.frame) %>% 
+    map(set_names, 'value') %>% 
+    map(rownames_to_column, 'parameter') %>% 
+    map(mutate, value = as.character(value)) %>% 
+    compress(names_to = 'algorithm') %>% 
+    as_tibble
+  
+  suppl_paper_tbl$tuning  <- suppl_paper_tbl$tuning %>% 
+    mutate(parameter = car::recode(parameter, 
+                                   "'lambda' = '\u03BB'; 
+                                   'type' = 'SVM model type'; 
+                                   'gamma.mu' = '\u03B3'; 
+                                   'mtry' = 'number of variables per try, mtry'; 
+                                   'splitrule' = 'splitting rule'; 
+                                   'nsplit' = 'number of splits'; 
+                                   'nodesize' = 'minimal node size'; 
+                                   'n.trees' = 'number of decision trees'; 
+                                   'n.minobsinnode' = 'minimal node size'; 
+                                   'interaction.depth' = 'interaction depth'"), 
+           criterion = car::recode(algorithm, 
+                                   "'ridge' = 'minimal deviance, repeated 10-fold CV'; 
+                                   'elnet' = 'minimal deviance, repeated 10-fold CV'; 
+                                   'lasso' = 'minimal deviance, repeated 10-fold CV'; 
+                                   'svm' = 'maximal concordance index, repeated 10-fold CV'; 
+                                   'rf' = 'maximal concordance index, out-of-bag predictions'; 
+                                   'gbm' = 'minimal deviance, 10-fold CV'"), 
+           algorithm = surv_globals$algo_labels[algorithm]) %>% 
+    select(algorithm, criterion, parameter, value) %>% 
+    set_names(c('Algorithm', 'Selection criterion', 'Parameter', 'Value'))
+  
+  suppl_paper_tbl$tuning <- suppl_paper_tbl$tuning %>% 
+    mdtable(label = 'table_s15_survival_model_tuning', 
+            ref_name = 'tuning', 
+            caption = paste('Selection of the optimal parameters of machine', 
+                            'learining survival models of biochemical', 
+                            'relapse-free survival with expression of the', 
+                            'collagen-related genes.', 
+                            'The selection process was accomplished by', 
+                            'cross-validation tuning in the pooled GEO cohort.'))
+   
+# Table S16: performance of the transcriptomic models at prediction of RFS --------
+  
+  insert_msg('Table S16: RS prediction by the transcriptomic models')
+  
+  suppl_paper_tbl$model_survival <- surv_summary$stats %>%
+    compress(names_to = 'algorithm') %>% 
+    select(algorithm, dataset, cohort, c_index, ibs_model) %>% 
+    mutate(cohort = surv_globals$study_labels[cohort], 
+           algorithm = surv_globals$algo_labels[algorithm]) %>% 
     map_dfc(function(x) if(is.numeric(x)) signif(x, 3) else x) %>% 
-    mdtable(label = 'table_s15_collagen_score_genes', 
-            ref_name = 'coll_score', 
-            caption = paste('Transcriptomic collagen score was established', 
-                            'by Elastic Net Cox modeling of biochemical', 
-                            'relapse-free survival in the TCGA cohort.', 
-                            'Hazard ratios (HR) of the member genes are', 
-                            'presented.'))
-  
-# Table S16: performance of the collagen score at prediction of RFS --------
-  
-  insert_msg('Table S16: RS prediction by the transcriptomic collagen score')
-  
-  suppl_paper_tbl$coll_survival <- coll_score$stats %>% 
-    filter(cohort != 'gse16560') %>% 
-    mutate(type = ifelse(cohort == 'tcga', 'training', 'test'), 
-           cohort = globals$study_labels[cohort]) %>% 
-    arrange(desc(type), cohort) %>% 
-    select(type, cohort, n_complete, n_events, 
-           c_index, ibs_model) %>% 
-    set_names(c('Data set type', 
+    set_names(c('Algorithm', 
+                'Data set type', 
                 'Cohort', 
-                'Complete cases', 
-                'Cases with biochemical relapse', 
-                'Concordance index', 'Integrated Brier score')) %>% 
-    map_dfc(function(x) if(is.numeric(x)) signif(x, 3) else x) %>% 
-    mdtable(label = 'table_s16_collagen_score_survival', 
-            ref_name = 'coll_survival', 
-            caption = paste('Performance of the transcriptomic collagen score', 
-                            'at prediction of biochemical relapse-free', 
-                            'survival in the TCGA training cohort and validation', 
-                            'collectives.'))
+                'Concordance index', 
+                'Integrated Brier score')) %>% 
+    mdtable(label = 'table_s16_rfs_prediction_stats_transcriptomic_models', 
+            ref_name = 'model_survival', 
+            caption = paste('Performance of machine learning models at', 
+                            'prediction of biochemical relapse-free survival', 
+                            'with expression of the collagen-related genes.'))
+    
+# Table S17: univariable survival analysis --------
+  
+  insert_msg('Table S17: univariable survival analysis')
+  
+  ## genes found significant in all cohorts are presented
+  
+  suppl_paper_tbl$rfs_univariable <- rfs_cut$test %>% 
+    compress(names_to = 'cohort') %>% 
+    select(marker, gene_symbol, cohort, 
+           n_total, n_events, 
+           cutoff, n_low, n_high, 
+           hr, chisq, significance) %>% 
+    filter(gene_symbol %in% reduce(rfs_cut$common_significant, union)) %>% 
+    mutate(cohort = surv_globals$study_labels[cohort], 
+           chisq = signif(chisq, 2), 
+           cutoff = signif(cutoff, 3), 
+           hr = signif(hr, 2)) %>% 
+    arrange(marker, gene_symbol)
+  
+  suppl_paper_tbl$rfs_univariable <- 
+    suppl_paper_tbl$rfs_univariable %>% 
+    set_names(c('Association with survival', 
+                'Gene symbol', 
+                'Cohort', 
+                'Total observations, n', 
+                'Relapses, n', 
+                'Cutoff, normalized expression', 
+                'Low expressors, n', 
+                'High expressors, n', 
+                'Hazard ratio', 
+                'Chi-square statistic', 
+                'Significance')) %>% 
+    mdtable(label = 'table_s17_univariable_rfs_analysis', 
+            ref_name = 'rfs_univariable', 
+            caption = paste('Results of univariable analysis of biochemical', 
+                            'relapse-free survival with expression of the', 
+                            'collagen-related genes.', 
+                            'Prostate cancer patients were stratified by',
+                            'expression cutoffs corresponding to the largest', 
+                            'difference in survival assessed by Mentel-Henszel', 
+                            'test.', 
+                            'Genes found to be significantly associated with', 
+                            'the survival in all analyzed cohorts (pooled GEO,', 
+                            'TCGA and DKFZ) are presented.', 
+                            'The table is available in a supplementary Excel', 
+                            'file.'))
   
 # Saving the supplementary tables ------
   

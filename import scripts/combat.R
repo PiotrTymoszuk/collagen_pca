@@ -139,6 +139,12 @@
     blast(cohort) %>% 
     map(select, -cohort)
   
+# Caching the results ------
+  
+  insert_msg('Caching the results')
+  
+  save(combat, file = './data/combat.RData')
+  
 # END -----
   
   plan('sequential')

@@ -20,9 +20,13 @@
   library(glmnet)
   library(coxExtensions)
   library(kmOptimizer)
+
+  library(survivalsvm)
+  library(randomForestSRC)
   
   library(furrr)
   library(soucer)
+  library(ggtext)
 
   explore <- exda::explore
   select <- dplyr::select
@@ -30,8 +34,16 @@
   set_rownames <- trafo::set_rownames
   
   c('./tools/globals.R', 
-    './tools/functions.R') %>% 
+    './tools/functions.R', 
+    './tools/svm_tools.R') %>% 
     source_all(message = TRUE, crash = TRUE)
+  
+# analysis data and globals --------
+  
+  insert_msg('Analysis data and globals')
+  
+  source_all('./survival scripts/globals.R', 
+             message = TRUE, crash = TRUE)
   
 # Univariable analysis ---------
   
@@ -39,27 +51,43 @@
   
   ## resorting to cached versions, because the analyses take a while
   
-  list(cache_path = c('./cache/os_cut.RData', 
-                      './cache/rfs_cut.RData'), 
-       script_path = c('./survival scripts/univariable_os.R', 
-                       './survival scripts/univariable_rfs.R'), 
-       message = paste('Loading cached univariable survival', 
-                       'analysis results for', 
-                       c('OS', 'RFS'))) %>% 
+  access_cache(cache_path = './cache/rfs_cut.RData', 
+               script_path = './survival scripts/univariable_rfs.R', 
+               message = 'Loading cached univariable survival analysis results')
+
+# Multi-parameter survival modeling ---------
+  
+  insert_msg('Multi-parameter modeling')
+  
+  list(cache_path = c('./cache/elnet_surv.RData', 
+                      './cache/ridge_surv.RData', 
+                      './cache/lasso_surv.RData', 
+                      './cache/svm_surv.RData', 
+                      './cache/svm_imp.RData', 
+                      './cache/rf_surv.RData', 
+                      './cache/gbm_surv.RData'), 
+       script_path = c('./survival scripts/elastic_net.R', 
+                       './survival scripts/ridge.R', 
+                       './survival scripts/lasso.R', 
+                       './survival scripts/svm_survival.R', 
+                       './survival scripts/svm_importance.R', 
+                       './survival scripts/rf.R', 
+                       './survival scripts/gbm.R'), 
+       message = c('Loading chached results of Elastic Net Cox modeling', 
+                   'Loading chached results of Ridge Cox modeling', 
+                   'Loading chached results of LASSO Cox modeling', 
+                   'Loading cached results of SVM modeling', 
+                   'Loading cached importance testing for the SVM survival score', 
+                   'Loading cached results of RF modeling', 
+                   'Loading cached results of GBM modeling')) %>% 
     pwalk(access_cache)
   
-# Elastic Net Cox modeling ---------
+  ## summary of the stats and plots for the multi-parameter modeling 
   
-  insert_msg('Elastic Net Cox modeling')
-  
-  access_cache(cache_path = './cache/coll_score.RData', 
-               script_path = './survival scripts/collagen_score.R', 
-               message = 'Loading chached results of Elastic Net Cox modeling')
-  
-  c('./survival scripts/collagen_score_plots.R', 
-    './survival scripts/collagen_score_multi.R') %>% 
+  c('./survival scripts/summary.R', 
+    './survival scripts/plots.R') %>% 
     source_all(message = TRUE, crash = TRUE)
-  
+
 # END -------
   
   insert_tail()

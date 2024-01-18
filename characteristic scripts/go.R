@@ -73,7 +73,7 @@
   
   insert_msg('Significantly enriched terms')
   
-  ## I'm extracting GO IDs as well, which will be lated utilized
+  ## I'm extracting GO IDs as well, which will be later utilized
   ## in clustering
   
   ana_go$significant <- ana_go$test %>% 
@@ -104,7 +104,7 @@
   
   insert_msg('Wang similatrity between common GOs')
   
-  ## lexicon of GO terms and their IDs used lated for anotation
+  ## lexicon of GO terms and their IDs used later for annotation
   ## of the clustering results
   
   ana_go$lexicon <- ana_go$test %>% 

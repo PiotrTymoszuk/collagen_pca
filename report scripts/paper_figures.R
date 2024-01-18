@@ -145,61 +145,51 @@
   
   insert_msg('Figure 3: transcriptional collagen score')
   
-  ## upper panel: development and performance of the transcriptional
-  ## collagen score
+  ## left panel: variable importance
   
-  paper_fig$coll_score$upper <- 
-    plot_grid(cs_plots$coef_plot + 
+  paper_fig$coll_score$left <- 
+    plot_grid(surv_plots$importance_plots$gbm + 
                 theme(plot.subtitle = element_blank(), 
                       legend.position = 'none', 
-                      axis.text.y = element_text(size = 7)) + 
-                labs(title = 'Transcriptional Collagen Score, development'), 
-              plot_grid(cs_plots$stat_plot + 
-                          theme(plot.subtitle = element_blank(), 
-                                legend.position = 'none') + 
-                          labs(title = 'Transcriptional Collagen Score, RFS prediction'), 
-                        get_legend(cs_plots$stat_plot + 
-                                     theme(legend.position = 'bottom')), 
-                        ggdraw(), 
-                        nrow = 3, 
-                        rel_heights = c(1, 0.12, 0.12)), 
-              ncol = 2, 
-              labels = LETTERS, 
+                      strip.background = element_blank(), 
+                      strip.text = element_blank(), 
+                      plot.title.position = 'plot', 
+                      plot.title = element_text(hjust = 0.4)), 
+              ggdraw(), 
+              nrow = 2, 
+              rel_heights = c(0.9, 0.1), 
+              labels = c('A', ''), 
               label_size = 10)
   
-  ## bottom panel: Kaplan-Meier plots of RFS in tertiles of the Collagen Score, 
-  ## the GSE70768, DKFZ and TCGA cohorts, where the score performed the best
+  ## right panel: performance stats and Kaplan-Meier plots for the tertiles
   
-  paper_fig$coll_score$bottom <- 
-    cs_plots$cox_cal_plots[c("tcga", "gse70768", "dkfz")] %>% 
-    map(~.x + theme(legend.position = 'none')) %>% 
-    c(list(get_legend(cs_plots$cox_cal_plots[[1]] + 
-                        scale_color_manual(values = c('darkolivegreen4', 
-                                                      'steelblue4', 
-                                                      'firebrick4'), 
-                                           labels = c('low', 'int', 'high'), 
-                                           name = 'Transcriptional Collagen Score') + 
-                        theme(legend.position = 'right')))) %>% 
-    plot_grid(plotlist = .,
-              ncol = 2, 
-              align = 'hv', 
-              axis = 'tblr')
-  
+  paper_fig$coll_score$right <- 
+    surv_plots$km_plots$gbm[c("geo", "tcga", "dkfz")] %>% 
+    map(~.x + 
+          theme(legend.title = element_blank(), 
+                legend.position = 'right', 
+                plot.subtitle = element_blank())) %>% 
+    c(list(surv_plots$stat_plots$gbm + 
+             theme(plot.subtitle = element_blank(), 
+                   legend.position = 'right')), .) %>% 
+    plot_grid(plotlist = ., 
+              nrow = 4, 
+              labels = c('B', 'C', '', ''), 
+              label_size = 10)
+
   ## the entire figure
   
   paper_fig$coll_score <- 
-    plot_grid(paper_fig$coll_score$upper, 
-              paper_fig$coll_score$bottom, 
-              nrow = 2, 
-              rel_heights = c(1, 1.2), 
-              labels = c('', 'C'), 
-              label_size = 10) %>% 
+    plot_grid(paper_fig$coll_score$left, 
+              paper_fig$coll_score$right, 
+              ncol = 2, 
+              rel_widths = c(0.9, 1.1)) %>% 
     as_figure(label = 'figure_3_transcriptional_collagen_score', 
               ref_name = 'coll_score', 
-              caption = paste('Transcriptional Collagen Score and prediction',
+              caption = paste('Transcriptional Collagen Model',
                               'of biochemical relapse-free survival.'),
               w = 180, 
-              h = 210)
+              h = 220)
   
 # Saving the figures ------
   
