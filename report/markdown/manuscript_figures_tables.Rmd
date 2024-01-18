@@ -93,12 +93,19 @@ Differentially expressed genes were defined by pFDR < 0.05 and d $\geq$ 0.2 crit
 Differential gene expression in cancer samples stratified by Gleason scoring (5 - 6, 7 and $\geq$ 8) was assessed by FDR-corrected one-way ANOVA with $\eta^2$ effect size statistic. 
 Genes with pFDR < 0.05 and $\eta^2 \geq$ 0.02 were deemed differentially regulated (__Supplementary Table S4__). 
 
-## Transcriptomic Collagen Score and prediction of biochemical relapse-free survival
+## Prediction of biochemical relapse-free survival by gradient boosted machine modeling
 
-Biochemical relapse-free survival was modeled in the TCGA training cohort as a function of first- and second-order normalized, $\log_2$-transformed expression levels of the collagen-related genes of interest by Elastic Net multi-parameter Cox regression [@Simon2011; @Zou2005]. 
-The Transcriptomic Collagen Score was computed as the linear predictor score of the Elastic Net Cox model with non-zero model coefficients presented in __Figure \@ref(fig:fig-coll-score)A__ and __Supplementary Table S15__.
+For survival analyses, $log_2$-transformed expression values of the collagen-related genes (__Supplementary Table S2__) were subjected to batch-adjustment with the ComBat algorithm [@Leek2012]. 
+Subsequently, the ComBat-adjusted expression data sets of the GSE54460, GSE70768, GSE70769, GSE220095 cohorts were merged (further referred to as 'pooled GEO' cohort). 
 
-Performance of the Transcriptomic Collagen Score at prediction of biochemical relapse-free survival in the training collective (TCGA) and validation data sets (remaining cohorts) was assessed by univariable Cox regression with Harrell's concordance index [@Harrell1996] and integrated Brier score [@Graf1999] as metrics of goodness of fit and calibration (__Supplementary Table 16__).
+Biochemical relapse-free survival in the pooled GEO training cohort was modeled with normalized (Z-scores) expression values of the collagen-related genes as explanatory variables by the Gradient Boosted Machine (GBM) algorithm [@Friedman2001; @Greenwell2022; @Natekin2013; @Friedman2002]. 
+Selection of the optimal set of modeling parameters was accomplished by tuning with 10-fold cross-validation and out-of-fold model deviance as performance statistic (__Supplementary Tables S15__). 
+The Transcriptomic Collagen Score was computed as the linear predictor score of the GBM model. 
+Importance of the explanatory variables for the predictive performance of the GBM model were measured with the relative influence method [@Friedman2001] and expressed as difference in the sum of squared errors ($\Delta SSE$, __Figure \@ref(fig:fig-coll-score)A__). 
+
+Performance of the Transcriptomic Collagen Score at prediction of biochemical relapse-free survival in the training pooled GEO collective and validation data sets (TCGA and DKFZ) was assessed by univariable Cox regression with Harrell's concordance index [@Harrell1996] and integrated Brier score [@Graf1999] as metrics of goodness of fit and calibration (__Figure \@ref(fig:fig-coll-score)B__, __Supplementary Table 16__). 
+Of note, predictive performance of the GBM algorithm was excellent and reproducible in the investigated cohorts as compared with several other machine learning algorithms (e.g. Ridge Cox regression, Elastic Net or Support Vector Machines, __Supplementary Figure S9__). 
+Differences in biochemical relapse-free survival in cancer patients stratified by tertiles of the Transcriptomic Collagen Scores were assessed by false discovery rate (FDR) corrected Peto-Peto test (__Figure \@ref(fig:fig-coll-score)C__).
 
 ## Data and code availability
 
@@ -140,21 +147,22 @@ _(B) Placeholder for the single cell RNA seq data._
 
 \newpage
 
-```{r fig-coll-score, fig.width = figur::convert(paper_fig$coll_score, to = 'in')$w, fig.height = figur::convert(paper_fig$coll_score, to = 'in')$h, fig.cap = 'Transcriptional Collagen Score and prediction of biochemical relapse-free survival.'}
+```{r fig-coll-score, fig.width = figur::convert(paper_fig$coll_score, to = 'in')$w, fig.height = figur::convert(paper_fig$coll_score, to = 'in')$h, fig.cap = 'Transcriptional Collagen Model of biochemical relapse-free survival.'}
 
 paper_fig$coll_score$plot
 
 ```
 
-__Figure \@ref(fig:fig-coll-score). Transcriptional Collagen Score and prediction of biochemical relapse-free survival.__ 
+__Figure \@ref(fig:fig-coll-score). Transcriptional Collagen Model of biochemical relapse-free survival.__ 
 
-_Transcriptional Collagen Score was established in the TCGA training cohort by multi-parameter Elastic Net Cox modeling of biochemical relapse-free survival as a function of first- and second-order normalized $log_2$-transformed expression levels of `r nrow(globals$genes_interest)` collagen-related genes._
+_Transcriptional Collagen Score was established in the pooled GEO training cohort by multi-parameter Gradient Boosted Machine (GBM) modeling of biochemical relapse-free survival as a function of normalized $log_2$-transformed and ComBat-adjusted expression levels of `r nrow(globals$genes_interest)` collagen-related genes._
 
-_(A) Non-zero Elastic Net Cox model coefficients presented as hazard ratios (HR). Point color codes for marker status (blue: favorable, red: unfavorable), point size represents absolute value of HR._
+_(A) Importance of explanatory variables measured by the gradient of sum of squared errors ($\Delta SSE$) during the training process attributed to particular collagen-related transcript levels._
 
 _(B) Performance of the Elastic Net Cox model at prediction of biochemical relapse-free survival in the training TCGA cohort and test collectives assessed by concordance index (C-index, high values indicate high concordance between the predicted and observed survival) and integrated Brier score (IBS, low values indicate good model fit and proper calibration). Values of C-index and IBS expected for random survival prediction are depicted as dashed lines._
 
 _(C) Fractions of biochemical relapse-free patients in low, intermediate and high tertiles of Transcriptional Collagen Score in the training TCGA cohort, and the GSE70768 and DKFZ validation collectives presented in Kaplan-Meier plots. Differences in survival between the tertiles were investigated by Peto-Peto test. Total numbers of patients and numbers of biochemical relapses are displayed in the plot captions. P values are shown in the plots._
+
 
 \newpage
 

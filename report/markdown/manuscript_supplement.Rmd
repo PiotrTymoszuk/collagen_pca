@@ -74,7 +74,15 @@ Clustering of GO terms by their semantic similarity was accomplished with _GOSem
 Differential modulation of transcriptional regulons and signaling pathways was analyzed with the _collecTRI_ [@Muller-Dott2023] and _PROGENy_ [@Schubert2018] databases by linear modeling tools of the _decoupleR_ package [@Badia-I-Mompel2022]. 
 Metabolic reaction activity modeling and metabolic subsystem enrichment analysis were performed with the packages _BiGGR_ [@Gavai2015; @King2016] and [_biggrExtra_](https://github.com/PiotrTymoszuk/biggrExtra). 
 
-For multi-parameter Elastic Net Cox modeling, the packages _glmnet_ [@Friedman2010], _survival_ [@Therneau2000], _surviminer_ [@Kassambara2016] and [_coxExtensions_](https://github.com/PiotrTymoszuk/coxExtensions) were used. 
+Multi-parameter modeling of biochemical relapse-free survival was done with the packages 
+_glmnet_ [@Friedman2010] (Ridge, Elastic Net and LASSO cox regression), 
+_survivalsvm_ [@Fouodo2018] (Support Vector Machines [SVM]), 
+_rfsrc_ [@Ishwaran2008; @Ishwaran2022a] (Random Forest), 
+_gbm_ [@Greenwell2022] (Gradient Boosted Machines [GBM]), 
+_survival_ [@Therneau2000], 
+_surviminer_ [@Kassambara2016] and 
+[_coxExtensions_](https://github.com/PiotrTymoszuk/coxExtensions) were used. 
+Univariable analysis of relapse-free survival was accomplished with [_kmOptimizer_](https://github.com/PiotrTymoszuk/kmOptimizer'). 
 
 For visualization of the results, the packages 
 _ggplot2_ [@Wickham2019] (scatter, stack, bubble and bar plots, heat maps), 
@@ -226,19 +234,32 @@ $n_i$ denotes the number of metabolic reactions within the $i$-th metabolic subs
 $n_{regulated}$ is the total number of significantly activated or inhibited biochemical reactions. 
 Common significantly activated or inhibited metabolic subsystems were identified as metabolic subsystems significantly activated or inhibited in at least four cohorts, with at least weak effect size defined by OR $\geq$ 1.44 (__Supplementary Figure S\@ref(fig:fig-metabolism)__, __Supplementary Table S\@ref(tab:tab-subsystems)__). 
 
-## Survival analysis and transcriptional collagen score
+## Multi-parameter survival modeling and transcriptional collagen score
 
-Biochemical relapse-free survival was modeled in the TCGA training cohort as a function of normalized $log_2$-transformed expression of the collagen-related genes of interest by multi-parameter Elastic Net Cox modeling [@Simon2011; @Zou2005]. 
-Of note, both first and second order terms were included in the Elastic Net model to account for possible non-linear association of gene expression with survival probability. 
-The optimal values of the shrinkage parameter $\lambda$ was found by tuning in 200 repeats 10-fold cross-validation and corresponded to the model with the lowest deviance (function `cv.glmnet()`, package _glmnet_) [@Friedman2010]. 
-The Elastic Net model was trained for the TCGA data set for the tuned $\lambda$ parameter with the `glmnet()` function from the _glmnet_ package. 
-The Transcriptional Collagen Score was defined as the linear predictor score of the Elastic Net model and was computed for the training TCGA cohort and the validation collectives GSE54460, GSE70768, GSE70769, GSE220095 and DKFZ with the `predict()` method. 
-Gene expression values used for calculation of the Transcriptional Collagen Score, i.e. non-zero coefficients of the Elastic Net model, are presented as hazard ratios (HR) in __Figure 3A__ and __Supplementary Table S\@ref(tab:tab-coll-score)__. 
+For survival analyses, $log_2$-transformed expression values of the collagen-related genes (__Supplementary Table S2__) were subjected to batch-adjustment with the ComBat algorithm [@Leek2012]. 
+Subsequently, the ComBat-adjusted expression data sets of the GSE54460, GSE70768, GSE70769, GSE220095 cohorts were merged (further referred to as 'pooled GEO' cohort). 
+
+Biochemical relapse-free survival in the pooled GEO training cohort was modeled with normalized (Z-scores) expression values of the the collagen-related genes as explanatory variables by the GBM algorithm [@Friedman2001; @Greenwell2022; @Natekin2013; @Friedman2002]. 
+Selection of the optimal set of modeling parameters (number of trees, shrinkage factor, interaction depth, and minimal number of observations in the tree node) was accomplished by tuning with 10-fold cross-validation and out-of-fold model deviance as performance statistic (__Supplementary Table S\@ref(tab:tab-tuning)__). 
+The tuning was performed with an in-house developed script. 
+The GBM model was trained in the pooled GEO cohort with the optimal tuning parameter set with the `gbm()` function (package _gbm_). 
+The Transcriptomic Collagen Score was defined as the linear predictor score of the GBM model and was computed for the best model iteration (function `gbm.perf(method = 'cv')`) with the `predict()` method and expression data from the training pooled GEO cohort and the TCGA and DKFZ test collectives. 
+Importance of the explanatory variables for the predictive performance of the GBM model in the training pooled GEO cohort were measured with the relative influence method [@Friedman2001] and expressed as gradient of the sum of squared errors attributed to particular variables ($\Delta SSE$, __Figure 3A__). 
 
 Performance of the Transcriptional Collagen Score at prediction of biochemical relapse-free survival was assessed by uni-variable Cox regression (functions `coxph()` and `as_coxex()`, packages _survival_ and [_coxExtensions_](https://github.com/PiotrTymoszuk/coxExtensions)) [@Therneau2000]. 
 The proportional hazard assumption of the Cox models was checked with the `summary(type = 'assumptions')` method, which implements the genuine `cox.zph()` algorithm [@Grambsch1994]. 
-Harrell's concordance index [@Harrell1996] and integrated Brier score [@Graf1999] were employed to investigate the overall concordance between the predicted and observed survival and to assess overall calibration (method `summary(type = 'fit')`, package [_coxExtensions_](https://github.com/PiotrTymoszuk/coxExtensions), __Figure 3B__ and __Supplementary Table S\@ref(tab:tab-coll-survival)__). 
+Harrell's concordance index [@Harrell1996] and integrated Brier score [@Graf1999] were employed to investigate the overall concordance between the predicted and observed survival and to assess overall calibration (method `summary(type = 'fit')`, package [_coxExtensions_](https://github.com/PiotrTymoszuk/coxExtensions), __Figure 3B__ and __Supplementary Table S\@ref(tab:tab-model-survival)__). 
+Of note, as compared with several other machine learning algorithms (Ridge, Elastic Net, and LASSO Cox regression, SVM and Random Forest) [@Friedman2010; @Fouodo2018; @Ishwaran2008; @Ishwaran2022a], the GBM model demonstrated an excellent performance and the highest reproducibility at prediction of biochemical relapse-free survival in the investigated cohorts (__Supplementary Figure S\@ref(fig:fig-surv-algos)__, __Supplementary Table S\@ref(tab:tab-model-survival)__). 
 Statistical significance of differences in biochemical relapse-free survival between patients stratified by tertiles of the Transcriptional Collagen Score was determined by Peto-Peto test (functions `surv_fit()` and `surv_pvalue()`, package _survminer_, __Figure 3C__).
+
+## Survival analysis for single collagen-related transcripts
+
+The univariable analysis of biochemical relapse-free survival for single collagen-related genes was done in the pooled GEO, TCGA and DKFZ data sets described above for the multi-parameter survival modeling. 
+For each of the collagen-related genes, cancer patients were classified as high and low expressors by an expression cutoff corresponding to the largest difference in biochemical relapse-free survival measured by FDR-corrected Mentel-Henszel test (function `find_cutoff()`, package [_kmOptimizer_](https://github.com/PiotrTymoszuk/kmOptimizer), minimal expression strata size set to 25% of the observations). 
+Hazard ratio (HR) with 95% confidence intervals for relapse risk in high expressors as compared with low expressors was calculated with the canonical _survival_ package functions _coxph()_, _coef_ and _confint()_. 
+Genes associated with unfavorable prognosis were defined by pFDR < 0.05 and HR > 1 for the high vs low expressor comparison. 
+Genes associated with favorable prognosis were defined by pFDR < 0.05 and HR < 1 (__Supplementary Figure S\@ref(fig:fig-surv-uni-volcano)__). 
+Common survival markers were defined as genes significantly associated with survival in all cohorts (__Supplementary Figure S\@ref(fig:fig-surv-uni-forest)__ - __S\@ref(fig:fig-surv-uni-detal3)__, __Supplementary Table S\@ref(tab:tab-rfs-univariable)__).
 
 ## Data and code availability
 
@@ -428,23 +449,51 @@ suppl_paper_tbl$subsystems[1, 1] %>%
 
 \newpage
 
-```{r tab-coll-score, tab.cap = 'Transcriptomic collagen score was established by Elastic Net Cox modeling of biochemical relapse-free survival in the TCGA cohort. Hazard ratios (HR) of the member genes are presented.'}
+```{r tab-tuning, tab.cap = 'Selection of the optimal parameters of machine learining survival models of biochemical relapse-free survival with expression of the collagen-related genes. The selection process was accomplished by cross-validation tuning in the pooled GEO cohort.'}
 
-flextable::flextable(suppl_paper_tbl$coll_score) %>% 
-  set_widths(c(3, 3)) %>% 
-  italic(1) %>% 
+flextable::flextable(suppl_paper_tbl$tuning) %>% 
+  set_widths(c(3.5, 4, 3, 3)) %>% 
+  merge_v(1:2, combine = TRUE) %>% 
+  footnote(1, 1, 
+           value = as_paragraph('SVM: Support Vector Machines; GBM: Gradient Boosted Machines.'),
+           part = 'header', 
+           ref_symbols = 'a') %>% 
+  footnote(1, 2, 
+           value = as_paragraph('CV: cross-validation.'), 
+           part = 'header', 
+           ref_symbols = 'b') %>% 
   theme_vanilla
 
 ```
 
 \newpage
 
-```{r tab-coll-survival, tab.cap = 'Performance of the transcriptomic collagen score at prediction of biochemical relapse-free survival in the TCGA training cohort and validation collectives.'}
+```{r tab-model-survival, tab.cap = 'Performance of machine learning models at prediction of biochemical relapse-free survival with expression of the collagen-related genes.'}
 
-flextable::flextable(suppl_paper_tbl$coll_survival) %>% 
-  set_widths(c(2.8, 3, 2.7, 2.7, 3, 3)) %>% 
-  merge_v(1) %>% 
+flextable::flextable(suppl_paper_tbl$model_survival) %>% 
+  set_widths(c(3.5, 2.7, 3, 2.8, 2.8)) %>% 
+  merge_v(1:2) %>% 
+  footnote(1, 1, 
+           value = as_paragraph('SVM: Support Vector Machines; GBM: Gradient Boosted Machines.'), 
+           part = 'header', 
+           ref_symbols = 'a') %>% 
+  footnote(1, 3, 
+           value = as_paragraph('pooled GEO: GSE54460, GSE70768, GSE70769, and GSE220095'), 
+           part = 'header', 
+           ref_symbols = 'b') %>% 
   theme_vanilla
+
+```
+
+\newpage
+
+```{r tab-rfs-univariable, tab.cap = 'Results of univariable analysis of biochemical relapse-free survival with expression of the collagen-related genes. Prostate cancer patients were stratified by expression cutoffs corresponding to the largest difference in survival assessed by Mentel-Henszel test. Genes found to be significantly associated with the survival in all analyzed cohorts (pooled GEO, TCGA and DKFZ) are presented. The table is available in a supplementary Excel file.'}
+
+suppl_paper_tbl$rfs_univariable[1, 1] %>% 
+  mutate( `Association with survival` = '') %>% 
+  set_names(' ') %>% 
+  flextable %>% 
+  set_widths(18)
 
 ```
 
@@ -460,7 +509,7 @@ suppl_paper_fig$norm_tumor$plot
 
 __Supplementary Figure S\@ref(fig:fig-norm-tumor). Expression of collagen-related genes in the normal prostate and prostate cancer tissue.__ 
 
-_Differences in $log_2$-transformed expression of `r nrow(globals$genes_interest)` collagen-related genes between donor-matched pairs of the prostate cancer and benign tissue were assessed by paired T test with Cohen's effect size statistic in the GSE70768 and TCGA cohorts. P values were corrected for multiple testing with the false discovery rate (FDR) method. Full analysis results are listed in Supplementary Table S\@ref(tab:tab-norm-tumor)_
+_Differences in $log_2$-transformed expression of `r nrow(globals$genes_interest)` collagen-related genes between donor-matched pairs of the prostate cancer and benign tissue were assessed by paired T test with Cohen's effect size statistic in the GSE70768 and TCGA cohorts. P values were corrected for multiple testing with the false discovery rate (FDR) method. Full analysis results are listed in Supplementary Table S\@ref(tab:tab-norm-tumor)._
 
 _(A) Numbers of significantly up- and downregulated genes in the tumor tissue as compared with the benign tissue in the investigated cohorts presented in Venn plots._
 
@@ -567,6 +616,79 @@ suppl_paper_fig$metabolism$plot
 __Supplementary Figure S\@ref(fig:fig-metabolism). Metabolism in the collagen clusters.__ 
 
 _Modulation of Recon2 model metabolic reactions in collagen high tumors as compared with collagen low cancers was predicted by Monte Carlo simulation implemented by the BiGGR and biggrExtra algorithms based on whole-genome differential gene expression estimates (Supplementary Table \@ref(tab:tab-reactions)). Enrichment of significantly activated and significantly inhibited reactions in the Recon metabolic subsystems was assessed by comparing the observed frequency of the subsystem's significantly regulated reactions with 10000 random draws from the entire reaction pool. Enrichment p values were corrected for multiple testing with the false discovery rate method. Enrichment odds ratios (OR) for significantly enriched metabolic subsystems with at least weak effect size (OR $\geq$ 1.44)  shared by at least five cohorts are presented in a bubble plot. Point color codes for reaction modulation status, point sizes represent absolute values of OR. Points are labeled with their OR values. Full analysis results are presented in Supplementary Table S\@ref(tab:tab-subsystems)._
+
+\newpage
+
+```{r fig-surv-algos, fig.width = figur::convert(suppl_paper_fig$surv_algos, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$surv_algos, to = 'in')$h, fig.cap = 'Comparison of performance of various machine learning algorithms at prediction of biochemical relapse-free survival with expression of the collagen-related genes.'}
+
+suppl_paper_fig$surv_algos$plot
+
+```
+
+__Supplementary Figure S\@ref(fig:fig-surv-algos). Comparison of performance of various machine learning algorithms at prediction of biochemical relapse-free survival with expression of the collagen-related genes.__ 
+
+_Biochemical relapse-free survival was modeled with normalized, $log_2$-transformed and ComBat-adjusted expression levels of the collagen-related genes by various machine learning algorithms (Ridge Cox regression, Elastic Net Cox regression, LASSO Cox regression, Support Vector Machines [SVM], Random Forest, and Gradient Boosted Machines [GBM]). Their performance at prediction of biochemical relapse-free survival in the training pooled GEO cohort, and the test TCGA and DKFZ collectives was assessed by Harrell's concordance index (C-index) and integrated Brier scores (IBS). High C-index values indicate good concordance between the observed and predicted survival. Low values of IBS indicate good model calibration._
+_C-index and IBS values are presented in scatter plots. Each point represents a single algorithm. Values of C-index and IBS expected for a model predicting survival at random are visualized as dashed lines._
+
+\newpage
+
+```{r fig-surv-uni-volcano, fig.width = figur::convert(suppl_paper_fig$surv_uni_volcano, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$surv_uni_volcano, to = 'in')$h, fig.cap = 'Differences in biochemical relapse-free survival between high and low expressors of the collagen-related genes.'}
+
+suppl_paper_fig$surv_uni_volcano$plot
+
+```
+
+__Supplementary Figure S\@ref(fig:fig-surv-uni-volcano). Differences in biochemical relapse-free survival between high and low expressors of the collagen-related genes.__ 
+
+_Cancer patients were stratified by cutoffs of normalized expression for each collagen-related genes which corresponded to the largest differences in biochemical relapse-free survival assessed by false discovery rate (FDR) corrected Mentel-Henszel test into high and low expressors for particular genes. Relative risk of biochemical relapse in high expressors as compared with low expressors was modeled by Cox proportional hazard regression and expressed as hazard ratio (HR). Unfavorable survival markers were defined by pFDR < 0.05 and HR > 1. Favorable survival markers were defined by pFDR < 0.05 and HR < 1. HR and pFDR values are presented in Volcano plots. Each point represents a single collagen-related gene. Significance and sign of association with the relapse risk are color coded. Significant genes are labeled with their symbols. Dashed lines indicate the significance and regulation cutoffs._
+
+\newpage
+
+```{r fig-surv-uni-forest, fig.width = figur::convert(suppl_paper_fig$surv_uni_forest, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$surv_uni_forest, to = 'in')$h, fig.cap = 'Collagen-related transcriptional markers of biochemical relapse risk shared by all investigated cohorts.'}
+
+suppl_paper_fig$surv_uni_forest$plot
+
+```
+
+__Supplementary Figure S\@ref(fig:fig-surv-uni-forest). Collagen-related transcriptional markers of biochemical relapse risk shared by all investigated cohorts.__ 
+
+_Differences in biochemical relapse-free survival in high expressors versus low expressors of each collagen-related gene were compared by Cox modeling and false discovery rate (FDR) corrected Mentel-Henszel test as presented in Supplementary Figure S\@ref(fig:fig-surv-uni-volcano). Unfavorable survival markers were defined by pFDR < 0.05 and hazard ratio (HR) > 1. Favorable survival markers were defined by pFDR < 0.05 and HR < 1. HR with 95% confidence intervals (CI) for unfavorable and favorable markers shared by all investigated cohorts are presented in a Forest plot._
+
+\newpage
+
+```{r fig-surv-uni-detail1, fig.width = figur::convert(suppl_paper_fig$surv_uni_detail1, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$surv_uni_detail1, to = 'in')$h, fig.cap = 'Differences in biochemical relapse-free survival between high and low gene expressors: _COL1A1_, _COL3A1_, and _COL5A2_.'}
+
+suppl_paper_fig$surv_uni_detail1$plot
+
+```
+
+__Supplementary Figure S\@ref(fig:fig-surv-uni-detail1). Differences in biochemical relapse-free survival between high and low gene expressors: _COL1A1_, _COL3A1_, and _COL5A2_.__ 
+
+_Differences in biochemical relapse-free survival in high expressors versus low expressors of each collagen-related gene were compared by Cox modeling and false discovery rate (FDR) corrected Mentel-Henszel test as presented in Supplementary Figure S\@ref(fig:fig-surv-uni-volcano). Unfavorable survival markers were defined by pFDR < 0.05 and hazard ratio (HR) > 1. Differences in biochemical relapse-free survival for the COL1A1, COL3A1, and COL5A2 genes identified as unfavorable markers in all investigated cohorts are shown in Kaplan-Meier plots. Numbers of complete cases and relapses, expression cutoff values, and numbers of high and low expressors are displayed in the plot captions. HR with 95% confidence intervals and pFDR obtained in Mentel-Henszel test are indicated in the plots._
+
+\newpage
+
+```{r fig-surv-uni-detail2, fig.width = figur::convert(suppl_paper_fig$surv_uni_detail2, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$surv_uni_detail2, to = 'in')$h, fig.cap = 'Differences in biochemical relapse-free survival between high and low gene expressors: _COL11A1_, _COL11A2_, _LOXL1_, and _SERPINH1_.'}
+
+suppl_paper_fig$surv_uni_detail2$plot
+
+```
+
+__Supplementary Figure S\@ref(fig:fig-surv-uni-detail2). Differences in biochemical relapse-free survival between high and low gene expressors: _COL11A1_, _COL11A2_, _LOXL1_, and _SERPINH1_.__ 
+
+_Differences in biochemical relapse-free survival in high expressors versus low expressors of each collagen-related gene were compared by Cox modeling and false discovery rate (FDR) corrected Mentel-Henszel test as presented in Supplementary Figure S\@ref(fig:fig-surv-uni-volcano). Unfavorable survival markers were defined by pFDR < 0.05 and hazard ratio (HR) > 1. Differences in biochemical relapse-free survival for the COL11A1, COL11A2, LOXL1, and SERPINH1 genes identified as unfavorable markers in all investigated cohorts are shown in Kaplan-Meier plots. Numbers of complete cases and relapses, expression cutoff values, and numbers of high and low expressors are displayed in the plot captions. HR with 95% confidence intervals and pFDR obtained in Mentel-Henszel test are indicated in the plots._
+
+\newpage
+
+```{r fig-surv-uni-detal3, fig.width = figur::convert(suppl_paper_fig$surv_uni_detal3, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$surv_uni_detal3, to = 'in')$h, fig.cap = 'Differences in biochemical relapse-free survival between high and low gene expressors: _COL4A6_, _DST_, _LAMB3_, and _PCOLCE2_.'}
+
+suppl_paper_fig$surv_uni_detal3$plot
+
+```
+
+__Supplementary Figure S\@ref(fig:fig-surv-uni-detal3). Differences in biochemical relapse-free survival between high and low gene expressors: _COL4A6_, _DST_, _LAMB3_, and _PCOLCE2_.__ 
+
+_Differences in biochemical relapse-free survival in high expressors versus low expressors of each collagen-related gene were compared by Cox modeling and false discovery rate (FDR) corrected Mentel-Henszel test as presented in Supplementary Figure S\@ref(fig:fig-surv-uni-volcano). Unfavorable survival markers were defined by pFDR < 0.05 and hazard ratio (HR) > 1. Differences in biochemical relapse-free survival for the COL4A6, DST, LAMB3, and PCOLCE2 genes identified as favorable markers in all investigated cohorts are shown in Kaplan-Meier plots. Numbers of complete cases and relapses, expression cutoff values, and numbers of high and low expressors are displayed in the plot captions. HR with 95% confidence intervals and pFDR obtained in Mentel-Henszel test are indicated in the plots._
 
 \newpage
 
