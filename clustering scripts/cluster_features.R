@@ -314,7 +314,7 @@
                                      angle = 90), 
           axis.text.y = element_text(face = 'italic')) + 
     labs(title = 'Collagen clusters of prostate cancers', 
-         subtitle = 'Mean collagen pathway gene expression levels')
+         subtitle = 'Mean collagen-related gene expression levels')
 
 # END -----
   

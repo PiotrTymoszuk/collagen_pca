@@ -1,6 +1,6 @@
 # COMBAT expression estimates used for multi-parameter modeling of survival
 #
-# Generation of a pooled GO cohort.
+# Generation of a pooled GEO cohort.
 
   insert_head()
   
@@ -106,6 +106,16 @@
       rep('Min/max scaled relapse-free survival', 3)) %>% 
     set_names(c('ridge', 'elnet', 'lasso', 'svm', 'rf', 'gbm'))
   
+  surv_globals$type_colors <- 
+    c(clinic = 'gray60', 
+      collagen = 'orangered2', 
+      full = 'firebrick4')
+  
+  surv_globals$type_labels <- 
+    c(clinic = 'clinical factors', 
+      collagen = 'collagen genes', 
+      full = 'collagen genes + clinical factors')
+  
 # CV folds used for tuning of the GLMNET models -----
   
   insert_msg('CV folds')
@@ -120,6 +130,36 @@
                                 list = FALSE, 
                                 returnTrain = TRUE)) %>% 
     set_names(paste0('rep_', 1:surv_globals$n_rep))
+  
+# Clinical data for the expression data sets ------
+  
+  insert_msg('Clinical data for the expression data sets')
+  
+  surv_globals$clinic <- globals$study_exprs %>% 
+    eval %>% 
+    map(~.x$clinic) %>% 
+    map(filter, tissue_type == 'tumor')
+  
+  surv_globals$clinic <- 
+    surv_globals$clinic[c("gse54460", "gse70768", "gse70769", "gse220095", "tcga", 'dkfz')] %>%
+    map(select, sample_id, gleason_simple, pt_stage, psa_diagnosis)
+  
+  surv_globals$clinic$geo <- 
+    surv_globals$clinic[c("gse54460", "gse70768", "gse70769")] %>% 
+    reduce(rbind)
+  
+  surv_globals$clinic <- surv_globals$clinic[names(surv_globals$data)] %>% 
+    map(~filter(.x, complete.cases(.x)))
+  
+# Tuning grid for the GBM models --------
+  
+  insert_msg('Tuning grid for the GBM models')
+  
+  surv_globals$gbm_grid <- 
+    expand.grid(n.trees = c(100, 200, 500, 1000, 2000),
+                shrinkage = seq(0.001, 0.1, by = 0.002),
+                interaction.depth = c(2, 3, 4),
+                n.minobsinnode = c(2, 5, 10))
   
 # END -----
   

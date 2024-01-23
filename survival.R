@@ -65,27 +65,31 @@
                       './cache/svm_surv.RData', 
                       './cache/svm_imp.RData', 
                       './cache/rf_surv.RData', 
-                      './cache/gbm_surv.RData'), 
+                      './cache/gbm_surv.RData', 
+                      './cache/surv_multi.RData'), 
        script_path = c('./survival scripts/elastic_net.R', 
                        './survival scripts/ridge.R', 
                        './survival scripts/lasso.R', 
                        './survival scripts/svm_survival.R', 
                        './survival scripts/svm_importance.R', 
                        './survival scripts/rf.R', 
-                       './survival scripts/gbm.R'), 
+                       './survival scripts/gbm.R', 
+                       './survival scripts/clinic.R'), 
        message = c('Loading chached results of Elastic Net Cox modeling', 
                    'Loading chached results of Ridge Cox modeling', 
                    'Loading chached results of LASSO Cox modeling', 
                    'Loading cached results of SVM modeling', 
                    'Loading cached importance testing for the SVM survival score', 
                    'Loading cached results of RF modeling', 
-                   'Loading cached results of GBM modeling')) %>% 
+                   'Loading cached results of GBM modeling', 
+                   'Loading cahced results for modeling with clinical variables')) %>% 
     pwalk(access_cache)
   
   ## summary of the stats and plots for the multi-parameter modeling 
   
   c('./survival scripts/summary.R', 
-    './survival scripts/plots.R') %>% 
+    './survival scripts/plots.R', 
+    './survival scripts/clinic_plots.R') %>% 
     source_all(message = TRUE, crash = TRUE)
 
 # END -------

@@ -1,5 +1,6 @@
 # Development of a multi-gene signatures of the Gleason scores (5 - 6, 7 and 8+), 
-# with ordinal ElasticNet regression.
+# with ordinal Random Forest. For this reason I'm re-coding the GS 
+# strata into a 
 #
 # As shown with overall model performance stats, prediction quality is low: 
 # expression of the collagen-related genes is only loosely associated with tumor
@@ -22,13 +23,8 @@
   
   ## expression of the collagen-related genes
   
-  gs_sign$expression <- globals$study_exprs %>% 
-    eval %>% 
-    map(~.x$expression) %>% 
-    map(filter, tissue_type == 'tumor') %>% 
-    map(select, 
-        sample_id, all_of(gs_sign$variables))
-  
+  gs_sign$expression <- combat$adjusted_data
+
   ## Gleason scores
   
   gs_sign$clinic <- globals$study_exprs %>% 
@@ -40,29 +36,14 @@
     map(~.x$result) %>% 
     compact
   
-  ## normalization and second order terms
+  ## normalization
   
   gs_sign$data <- 
     map2(gs_sign$clinic, 
          gs_sign$expression[names(gs_sign$clinic)], 
          left_join, by = 'sample_id') %>% 
     map(~filter(.x, complete.cases(.x))) 
-  
-  for(i in names(gs_sign$data)) {
-    
-    gs_sign$sq_data[[i]] <- gs_sign$data[[i]][gs_sign$variables] %>% 
-      map_dfc(~.x^2)
-    
-    gs_sign$sq_data[[i]] <- gs_sign$sq_data[[i]] %>% 
-      set_colnames(paste0(colnames(gs_sign$sq_data[[i]]), '_sq'))
-    
-    gs_sign$data[[i]] <- cbind(gs_sign$data[[i]], gs_sign$sq_data[[i]])
-    
-  }
-  
-  gs_sign$variables <- 
-    c(gs_sign$variables, paste0(gs_sign$variables, '_sq'))
-  
+
   for(i in names(gs_sign$data)) {
     
     gs_sign$data[[i]][gs_sign$variables] <- 
@@ -75,12 +56,7 @@
   
   gs_sign$data <- gs_sign$data %>% 
     map(mutate, 
-        gleason_simple = car::recode(gleason_simple, 
-                                     "'5 - 6' = 'low'; 
-                                     '7' = 'int'; 
-                                     '8+' = 'high'"), 
-        gleason_simple = factor(gleason_simple, 
-                                c('low', 'int', 'high'))) %>% 
+        gleason_simple = as.numeric(gleason_simple)) %>% 
     map(~filter(.x, complete.cases(.x))) %>% 
     map(column_to_rownames, 'sample_id')
   
@@ -94,7 +70,7 @@
         .outcome = gleason_simple, 
         n = n)
   
-# Tuning of the Elastic Net model in the TCGA cohort --------
+# Tuning of a Ranger RF model in the TCGA cohort --------
   
   insert_msg('Tuning')
   
@@ -103,21 +79,19 @@
   gs_sign$caret_model <- 
     train(gleason_simple ~ ., 
           data = gs_sign$data$tcga, 
-          method = 'ordinalNet', 
-          metric = 'Kappa', 
-          tuneGrid = expand.grid(alpha = 0.5, 
-                                 lambda = seq(0, 0.1, by = 0.001), 
-                                 link = 'logit', 
-                                 family = 'cumulative', 
-                                 modeltype = 'semiparallel', 
-                                 criteria = 'bic'), 
+          method = 'ranger', 
+          metric = 'Rsquared', 
+          tuneGrid = expand.grid(mtry = 2:27, 
+                                 splitrule = c('variance', 
+                                               'extratrees', 
+                                               'maxstat'), 
+                                 min.node.size = c(1, 3, 5, 10)), 
           trControl = trainControl(method = 'cv', 
                                    number = 10, 
                                    savePredictions = 'final', 
                                    returnData = TRUE, 
-                                   returnResamp = 'final', 
-                                   classProbs = TRUE), 
-          standardize = FALSE) %>% 
+                                   returnResamp = 'final'), 
+          num.trees = 1000) %>% 
     as_caretx
   
   stopImplicitCluster()
@@ -142,32 +116,25 @@
            type = factor(type, c('training', 'test')), 
            cohort = factor(cohort, names(gs_sign$predictions)))
   
-# Predictions for Gleason score strata ----
+# Variable importance -------
   
-  insert_msg('Prediction stats for particular strata')
+  insert_msg('Variable importance')
   
-  ## done in a 'one vs rest' manner, appending with strata n number
-  
-  gs_sign$strata_stats <- gs_sign$predictions %>% 
-    map(clstats) %>% 
-    map2(., gs_sign$n_numbers, left_join, by = '.outcome')
-  
-# Model coefficients -------
-  
-  insert_msg('Model coefficients')
+  ## done only at request, the models perform quite poor
+  ## so it does not make much sense to present variable importances
   
   ## non-zero coeffcients corresponding to the best lambda value
 
-  gs_sign$coefs <- gs_sign$caret_model$finalModel %>% 
-    coef %>% 
-    compress(names_to = 'parameter', 
-             values_to = 'coef') %>% 
-    mutate(variable = stri_replace(parameter, regex = ':.*', replacement = ''), 
-           level = stri_extract(parameter, regex = ':.*'), 
-           level = stri_extract(level, regex = '\\d+'), 
-           level = ifelse(is.na(level), 0, as.numeric(level)), 
-           level = levels(gs_sign$data[[1]]$gleason_simple)[level + 1]) %>% 
-    filter(coef != 0)
+  #gs_sign$coefs <- gs_sign$caret_model$finalModel %>% 
+   # coef %>% 
+    #compress(names_to = 'parameter', 
+     #        values_to = 'coef') %>% 
+  #  mutate(variable = stri_replace(parameter, regex = ':.*', replacement = ''), 
+   #        level = stri_extract(parameter, regex = ':.*'), 
+    #       level = stri_extract(level, regex = '\\d+'), 
+     #      level = ifelse(is.na(level), 0, as.numeric(level)), 
+      #     level = levels(gs_sign$data[[1]]$gleason_simple)[level + 1]) %>% 
+  #  filter(coef != 0)
 
 # Caching the results --------
   

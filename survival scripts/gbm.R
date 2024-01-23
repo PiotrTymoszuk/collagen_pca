@@ -41,11 +41,7 @@ insert_head()
   
   insert_msg('Tuning grid')
   
-  gbm_surv$tune_grid <- 
-    expand.grid(n.trees = c(100, 200, 500, 1000, 2000),
-                shrinkage = seq(0.001, 0.1, by = 0.002),
-                interaction.depth = c(2, 3, 4),
-                n.minobsinnode = c(2, 5, 10))
+  gbm_surv$tune_grid <- surv_globals$gbm_grid
   
 # CV tuning in the GEO data set -------
   

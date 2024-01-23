@@ -218,6 +218,59 @@
           geom_vline(xintercept = 0,
                      linetype = 'dashed') + 
           theme(legend.position = 'none'))
+  
+# Error structure: plots of square errors of prediction -------
+  
+  insert_msg('Plots of square errors of prediction')
+  
+  ## the square errors are available
+  
+  surv_plots$square_plots <- list(ridge = ridge_surv, 
+                                  elnet = elnet_surv, 
+                                  lasso = lasso_surv, 
+                                  gbm = gbm_surv) %>% 
+    map(~.x$calibration) %>% 
+    map(map, 
+        plot, 
+        type = 'squares')
+  
+  ## plot titles and styling
+  ## transposition in a more handy format
+  
+  for(i in names(surv_plots$square_plots)) {
+    
+    surv_plots$square_plots[[i]] <- 
+      list(x = surv_plots$square_plots[[i]], 
+           y = paste(surv_globals$algo_labels[[i]], 
+                     surv_globals$study_labels[names(surv_plots$square_plots[[i]])], 
+                     sep = ', ')) %>% 
+      pmap(function(x, y) x %>% 
+             map(~.x + 
+                   labs(title = y) + 
+                   globals$common_theme + 
+                   theme(panel.grid.major.x = element_blank())))
+    
+  }
+  
+  surv_plots$square_plots <- surv_plots$square_plots %>% 
+    map(transpose) %>%
+    transpose
+  
+  for(i in names(surv_plots$square_plots$time)) {
+    
+    surv_plots$square_plots$time[[i]] <- 
+      surv_plots$square_plots$time[[i]] %>% 
+      map(~.x + labs(x = surv_globals$algo_xlabs[[i]]))
+    
+  }
+  
+  surv_plots$square_plots$observation <- 
+    surv_plots$square_plots$observation %>% 
+    map(map, 
+        ~.x + 
+          theme(axis.text.x = element_blank(),
+                axis.ticks.x = element_blank()) + 
+          geom_hline(yintercept = 0.25, linetype = 'dashed'))
 
 # END -------
   
