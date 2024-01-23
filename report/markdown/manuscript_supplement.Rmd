@@ -1,5 +1,5 @@
 ---
-title: "Prognostic and biological relevance of collagen biosynthesis pathway in prostate cancer"
+title: "Prognostic and biological relevance of collagen-related genes in prostate cancer"
 subtitle: "Supplementary material, transcriptome part"
 date: "`r format(Sys.time(), '%Y-%m-%d')`"
 
