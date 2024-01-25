@@ -25,9 +25,9 @@
   
   insert_msg('Analysis globals')
   
-  gs_uni$gleason_colors <- c('5 - 6' = 'steelblue', 
-                             '7' = 'coral2', 
-                             '8+' = 'coral4')
+  gs_uni$gleason_colors <- c('ISUP1' = 'steelblue', 
+                             'ISUP2' = 'coral2', 
+                             'ISUP3+' = 'coral4')
   
 # gene expression data -------
   
@@ -62,11 +62,15 @@
          gs_uni$expression[names(gs_uni$clinic)], 
          left_join, by = 'sample_id') %>% 
     map(~filter(.x, complete.cases(.x))) %>% 
-    map(~mutate(.x, 
-                gleason_simple = factor(gleason_simple, 
-                                        levels(.x$gleason_simple), 
-                                        ordered = TRUE)))
-  
+    map(mutate, 
+        gleason_simple = car::recode(gleason_simple, 
+                                     "'5 - 6' = 'ISUP1'; 
+                                        '7' = 'ISUP2'; 
+                                        '8+' = 'ISUP3+'"), 
+        gleason_simple = factor(gleason_simple, 
+                                c('ISUP1', 'ISUP2', 'ISUP3+'), 
+                                ordered = TRUE))
+
 # Z scores and mean Z scores --------
   
   insert_msg('Z scores')

@@ -89,7 +89,7 @@
     mdtable(label = 'table_s4_gleason', 
             ref_name = 'gleason', 
             caption = paste("Expression of the collagen pathway genes", 
-                            "in cancer samples stratified by Gleason scores", 
+                            "in cancer samples stratified by the ISUP risk system", 
                             "compared by one-way ANOVA with eta-square", 
                             "effect size statistic.", 
                             "P values were corrected for multiple testing", 
