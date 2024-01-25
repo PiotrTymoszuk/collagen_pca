@@ -132,10 +132,10 @@ Effect sizes were interpreted as follows [@Cohen2013]:
 P values were corrected for multiple testing with the false discovery rate method (FDR) [@Benjamini1995] within each analysis step and cohort. 
 Effects were considered statistically significant for FDR-corrected p values < 0.05.
 
-## Comparison of gene expression between the benign and cancer tissue, and cancer samples stratified by Gleason scores
+## Comparison of gene expression between the benign and cancer tissue, and cancer samples stratified by the ISUP risk scheme
 
 Differences in $log_2$-transformed expression levels of the collagen pathway genes between donor-matched cancer and benign prostate specimens were investigated with paired two-tailed T test with Cohen's effect size statistic in the GSE70768 and TCGA cohorts (__Figure 1B__, __Supplementary Figure S\@ref(fig:fig-norm-tumor)__ and __Supplementary Table S\@ref(tab:tab-norm-tumor)__). 
-Differences in gene expression between cancer samples stratified by Gleason score (5 - 6, 7, $\geq$ 8) were explored by one-way ANOVA with $\eta^2$ effect size statistic (__Figure 1C__, __Supplementary Table S\@ref(tab:tab-gleason)__).
+Differences in gene expression between cancer samples stratified according to the ISUP risk scheme (ISUP1: Gleason Score 5 - 6, ISUP2: Gleason score 7, ISUP3+: Gleason Score $\geq$ 8) were explored by one-way ANOVA with $\eta^2$ effect size statistic (__Figure 1C__, __Supplementary Table S\@ref(tab:tab-gleason)__).
 Differentially regulated genes were defined by pFDR < 0.05 and at least weak effect size of the difference (d $\geq$ 0.2 or $\eta^2 \geq$ 0.02). 
 The analyses were done with the function `compare_variables()` from the [_ExDA_](https://github.com/PiotrTymoszuk/ExDA) package.
 
@@ -239,7 +239,7 @@ Common significantly activated or inhibited metabolic subsystems were identified
 For survival analyses, $log_2$-transformed expression values of the collagen-related genes (__Supplementary Table S2__) were subjected to batch-adjustment with the ComBat algorithm [@Leek2012]. 
 Subsequently, the ComBat-adjusted expression data sets of the GSE54460, GSE70768, GSE70769, GSE220095 cohorts were merged (further referred to as 'pooled GEO' cohort). 
 
-Biochemical relapse-free survival in the pooled GEO training cohort was modeled with normalized (Z-scores) expression values of the the collagen-related genes as explanatory variables by the GBM algorithm [@Friedman2001; @Greenwell2022; @Natekin2013; @Friedman2002]. 
+Biochemical relapse-free survival in the pooled GEO training cohort was modeled with normalized (Z-scores) expression values of the collagen-related genes as explanatory variables by the GBM algorithm [@Friedman2001; @Greenwell2022; @Natekin2013; @Friedman2002]. 
 Selection of the optimal set of modeling parameters (number of trees, shrinkage factor, interaction depth, and minimal number of observations in the tree node) was accomplished by tuning with 10-fold cross-validation and out-of-fold model deviance as performance statistic (__Supplementary Table S\@ref(tab:tab-tuning)__). 
 The tuning was performed with an in-house developed script. 
 The GBM model was trained in the pooled GEO cohort with the optimal tuning parameter set with the `gbm()` function (package _gbm_). 
@@ -310,7 +310,7 @@ suppl_paper_tbl$norm_tumor[1, 1] %>%
 
 \newpage
 
-```{r tab-gleason, tab.cap = 'Expression of the collagen pathway genes in cancer samples stratified by Gleason scores compared by one-way ANOVA with eta-square effect size statistic. P values were corrected for multiple testing with the false discovery rate method. log2-transformed expression values are presented as medians with interquartile ranges (IQR) and ranges. The table is available as a supplementary Excel file.'}
+```{r tab-gleason, tab.cap = 'Expression of the collagen pathway genes in cancer samples stratified by the ISUP risk groups compared by one-way ANOVA with eta-square effect size statistic. P values were corrected for multiple testing with the false discovery rate method. log2-transformed expression values are presented as medians with interquartile ranges (IQR) and ranges. The table is available as a supplementary Excel file.'}
 
 suppl_paper_tbl$gleason[1, 1] %>% 
   mutate(Cohort = '') %>% 
