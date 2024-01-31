@@ -185,7 +185,7 @@
               w = 180, 
               h = 230)
   
-# Figure S4: clusters, Gleason and tumor stage --------
+# Figure S4: clusters, ISUP and tumor stage --------
   
   insert_msg('Figure S4: clusters and tumor pathology')
   
@@ -215,7 +215,7 @@
               label_size = 10) %>% 
     as_figure(label = 'figure_s4_collagen_pathology', 
               ref_name = 'clust_tumor', 
-              caption = paste('Gleason score and pathological tumor stage', 
+              caption = paste('ISUP and pathological tumor stage', 
                               'in the collagen clusters.'), 
               w = 160, 
               h = 180)

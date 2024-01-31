@@ -27,7 +27,9 @@
   ana_clinic$lexicon <- globals$clinical_lexicon %>% 
     filter(variable %in% ana_clinic$variables) %>% 
     mutate(test_type = ifelse(format == 'numeric', 'wilcoxon_r', 'cramer_v'), 
-           plot_type = ifelse(format == 'numeric', 'box', 'stack'))
+           plot_type = ifelse(format == 'numeric', 'box', 'stack'),
+           label = ifelse(variable == 'gleason_simple', 
+                          'ISUP', label))
 
 # Analysis data --------
   
@@ -42,6 +44,7 @@
         any_of(ana_clinic$variables))
   
   ## cluster assignment
+  ## coding GS as ISUP
   
   ana_clinic$data <- 
     map2(ana_globals$assignment, 
@@ -50,6 +53,13 @@
     map(filter, !is.na(clust_id))
   
   ana_clinic$data <- ana_clinic$data %>% 
+    map(mutate, 
+        gleason_simple = car::recode(gleason_simple, 
+                                     "'5 - 6' = 'ISUP1'; 
+                                     '7' = 'ISUP2'; 
+                                     '8' = 'ISUP3+'"), 
+        gleason_simple = factor(gleason_simple,  
+                                c('ISUP1', 'ISUP2', 'ISUP3+'))) %>%  
     map(map_dfc, function(x) if(is.factor(x)) droplevels(x) else x)
 
   ## clinical variables present in the given collective
@@ -118,16 +128,16 @@
            cohort = globals$study_labels[cohort]) %>% 
     relocate(cohort)
   
-# Plot panels for Gleason scores, pathology stages, PSA and age ------
+# Plot panels for ISUP, pathology stages, PSA and age ------
   
-  insert_msg('Plots of Gleason scores, tumor stages, PSA and age')
+  insert_msg('Plots of ISUP, tumor stages, PSA and age')
   
   ## stack plots of the Gleason scores and umor stages
   
   ana_clinic$plot_panels[c('pt_stage', 'gleason_simple')] <- 
     list(variable = c('pt_stage', 'gleason_simple'), 
          plot_title = c('Pathological tumor stage', 
-                        'Gleason score')) %>% 
+                        'ISUP')) %>% 
     pmap(plot_stage_stack,
          data_lst = ana_clinic$data, 
          test_lst = ana_clinic$test, 

@@ -14,6 +14,7 @@
   library(rlang)
   library(rstatix)
   library(ggrepel)
+  library(caret)
 
 # data import ------
 
@@ -1392,6 +1393,100 @@
            subtitle = plot_subtitle, 
            tag = plot_tag, 
            fill = 'log<sub>2</sub> fold-regulation<br>vs Collagen low')
+    
+  }
+  
+# Extra calculations and graph for the manuscript --------
+  
+  data_from_sesp <- function(sens, 
+                             spec, 
+                             n_outcome,
+                             n_total) {
+    
+    ## creates a data set with the predicted and observed labels
+    ## levels are set as required by caret (outcome first!)
+    
+    true_pos <- round(n_outcome * sens)
+    false_neg <- n_outcome - true_pos
+    
+    true_neg <- round((n_total - n_outcome) * spec)
+    false_pos <- n_total - n_outcome - true_neg
+    
+    positive_data <- data.frame(obs = rep('positive', n_outcome), 
+                                pred = c(rep('positive', true_pos), 
+                                         rep('negative', false_neg)))
+    
+    negative_data <- data.frame(obs = rep('negative', n_total - n_outcome), 
+                                pred = c(rep('negative', true_neg), 
+                                         rep('positive', false_pos)))
+    
+    rbind(positive_data, negative_data) %>% 
+      mutate(obs = factor(obs, c('positive', 'negative')), 
+             pred = factor(pred, c('positive', 'negative')))
+    
+  }
+  
+  data_from_ppnp <- function(ppv, 
+                             npv, 
+                             n_outcome, 
+                             n_total) {
+    
+    ## creates a data set with the predicted and observed labels
+    ## levels are set as required by caret (outcome first!)
+    ##
+    ## the idea comes from:
+    ## https://colab.research.google.com/github/AllenDowney/RecidivismCaseStudy/blob/master/04_matrix.ipynb#scrollTo=Upbk0rgUN3N8
+    
+    prev <- n_outcome/n_total
+    
+    true_pos <- ppv * (npv + prev - 1)/(npv + ppv - 1)
+    true_neg <- npv*(ppv - prev)/(npv + ppv - 1)
+    
+    true_pos <- round(true_pos * n_total)
+    true_neg <- round(true_neg * n_total)
+    
+    false_neg <- n_outcome - true_pos
+    false_pos <- n_total - n_outcome - true_neg
+    
+    positive_data <- data.frame(obs = rep('positive', n_outcome), 
+                                pred = c(rep('positive', true_pos), 
+                                         rep('negative', false_neg)))
+    
+    negative_data <- data.frame(obs = rep('negative', n_total - n_outcome), 
+                                pred = c(rep('negative', true_neg), 
+                                         rep('positive', false_pos)))
+    
+    rbind(positive_data, negative_data) %>% 
+      mutate(obs = factor(obs, c('positive', 'negative')), 
+             pred = factor(pred, c('positive', 'negative')))
+    
+  }
+  
+  roc_stats <- function(data, 
+                        levels = c('positive', 'negative')) {
+    
+    ## ROC stats in a tibble
+    
+    res <- multiClassSummary(data = data, 
+                             lev = levels) %>% 
+      compress(names_to = 'stat', 
+               values_to = 'value') %>%
+      column_to_rownames('stat')
+    
+    res <- res %>% 
+      t %>% 
+      as.data.frame
+    
+    n_observed <- table(data$obs)
+    n_predicted <- table(data$pred)
+    
+    n_numbers <- tibble(n_observed_positive = n_observed[1], 
+                        n_observed_negative = n_observed[2], 
+                        n_predicted_positive = n_predicted[1], 
+                        n_predicted_negative = n_predicted[2])
+    
+    cbind(n_numbers, res) %>% 
+      as_tibble
     
   }
   
