@@ -15,6 +15,8 @@ To access manuscript files, please use the following links:
 
 * an Excel file with [manuscript supplementary tables](https://github.com/PiotrTymoszuk/collagen_pca/blob/main/report/manuscript_supplementary_tables.xlsx)
 
+* [extra ROC statistics for proteomic SVM models and visualizations of confusion matrices for PIRADS3 patients](https://github.com/PiotrTymoszuk/collagen_pca/tree/main/report/manuscript%20extras)
+
 ## Terms of use
 Publicly available data sets were analyzed. 
 To reference and use analysis results, please cite our GitHub repository and our publication if available. In any questions, please contact [Isabel Heidegger](mailto:Isabel-Maria.Heidegger@i-med.ac.at) or [Piotr Tymoszuk](mailto:piotr.s.tymoszuk@gmail.com).
