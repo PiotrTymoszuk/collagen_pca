@@ -92,7 +92,7 @@ Figures and tables were created with the packages _cowplot_ [@Wilke2019] and _fl
 
 ## Data sources and data import
 
-Transcriptome cohorts for analysis in the current report were selected from studies deposited at cBioportal and Gene Expression Omnibus (GEO) with the following criteria: availability of information on Gleason scoring, biochemical relapse and biochemical relapse-free survival, and expression data for `r nrow(globals$genes_interest)` collagen-related genes investigated also in the proteomic part of the project (__Supplementary Table S\@ref(tab:tab-cohorts)__ and __S\@ref(tab:tab-genes)__).
+Transcriptome cohorts for analysis in the current report were selected from studies deposited at cBioportal and Gene Expression Omnibus (GEO) with the following criteria: availability of information on Gleason scoring or ISUP risk strata (International Society of Urological Pathology), biochemical relapse and biochemical relapse-free survival, and expression data for `r nrow(globals$genes_interest)` collagen-related genes investigated also in the proteomic part of the project (__Supplementary Table S\@ref(tab:tab-cohorts)__ and __S\@ref(tab:tab-genes)__).
 
 The TCGA prostate cancer data set [@Liu2018; @Abeshouse2015] and DKFZ data set [@Gerhauser2018] consisted of normalized RNA sequencing data for `r tcga$expression %>% filter(tissue_type == 'tumor') %>% nrow` and `r dkfz$expression %>% filter(tissue_type == 'tumor') %>% nrow` cancer samples, respectively, with accompanying clinical information and were obtained from the cBioportal repository with in-house-developed R scripts. 
 The TCGA cohort included also 
@@ -108,6 +108,7 @@ Gene expression levels were transformed with the $log_2(expression)$ and $log_2(
 The _MCP Counter_ and _xCell_ estimates of non-malignant cell content in cancer samples were computed with the `deconvolute()` function from the _immunedeconv_ package. 
 Gene signatures of the [Reactome pathways](https://reactome.org/) were obtained from the [MSig database](https://www.gsea-msigdb.org/gsea/msigdb/index.jsp), version 7.5.1. 
 ssGSEA scores were computed with the `calculate()` function from the [_gseaTools_](https://github.com/PiotrTymoszuk/gseaTools) package. 
+ISUP strata were defined based on Gleason Score information as follows: ISUP1: Gleason score 5 - 6, ISUP2: Gleason score 7, ISUP3+: Gleason score $\geq$ 8.
 
 The investigated collagen-related genes included the published Collagen Signature [@Kocher2021] and the Reactome Collagen formation pathway genes (R-HSA-1474290) and were constrained to features covered by proteomic analyses of the current report (__Supplementary Table S\@ref(tab:tab-genes)__).
 
@@ -340,7 +341,7 @@ flextable::flextable(suppl_paper_tbl$clinic) %>%
   set_widths(c(2.8, 3.5, 4, 4, 2.8, 2.8)) %>% 
   merge_v(1) %>% 
   footnote(1, 2, 
-           value = as_paragraph('PSA: prostate-specific antigen.'), 
+           value = as_paragraph('PSA: prostate-specific antigen; ISUP: International Society of Urological Pathology risk stratification system.'), 
            part = 'header', 
            ref_symbols = 'a') %>% 
   footnote(1, 5:6, 
@@ -553,15 +554,15 @@ _(B) Mean normalized $log_2$-transformed expression values of the cluster-defini
 
 \newpage
 
-```{r fig-clust-tumor, fig.width = figur::convert(suppl_paper_fig$clust_tumor, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$clust_tumor, to = 'in')$h, fig.cap = 'Gleason score and pathological tumor stage in the collagen clusters.'}
+```{r fig-clust-tumor, fig.width = figur::convert(suppl_paper_fig$clust_tumor, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$clust_tumor, to = 'in')$h, fig.cap = 'ISUP and pathological tumor stage in the collagen clusters.'}
 
 suppl_paper_fig$clust_tumor$plot
 
 ```
 
-__Supplementary Figure S\@ref(fig:fig-clust-tumor). Gleason score and pathological tumor stage in the collagen clusters.__ 
+__Supplementary Figure S\@ref(fig:fig-clust-tumor). ISUP and pathological tumor stage in the collagen clusters.__ 
 
-_Differences in distribution of Gleason scores (A, 5 - 6, 7 and $\geq$ 8) and pathological tumor stages (B) between the collagen clusters were investigated by $\chi^2$ test with Cramer V effect size statistic. P values were corrected for multiple testing with the false discovery rate method. Percentages of samples assigned to the Gleason score strata or tumor stages within each cluster are shown in stack plots. Effect sizes and p values are displayed in the plot facets. Numbers of complete observations in the clusters are indicated in the Y axes. Full clinical and pathological characteristic of the collagen clusters is shown in Supplementary Table S\@ref(tab:tab-clinic)._
+_Differences in distribution of ISUP risk strata (International Society of Urological Pathology: ISUP1, ISUP2 and ISUP3+) and pathological tumor stages (B) between the collagen clusters were investigated by $\chi^2$ test with Cramer V effect size statistic. P values were corrected for multiple testing with the false discovery rate method. Percentages of samples assigned to the ISUP strata or tumor stages within each cluster are shown in stack plots. Effect sizes and p values are displayed in the plot facets. Numbers of complete observations in the clusters are indicated in the Y axes. Full clinical and pathological characteristic of the collagen clusters is shown in Supplementary Table S\@ref(tab:tab-clinic)._
 
 \newpage
 
