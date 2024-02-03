@@ -472,7 +472,7 @@ flextable::flextable(suppl_paper_tbl$tuning) %>%
 ```{r tab-model-survival, tab.cap = 'Performance of machine learning models at prediction of biochemical relapse-free survival with expression of the collagen-related genes.'}
 
 flextable::flextable(suppl_paper_tbl$model_survival) %>% 
-  set_widths(c(3.5, 2.7, 3, 2.8, 2.8)) %>% 
+  set_widths(c(2.8, 2.7, 2.7, 4.6, 2.5)) %>% 
   merge_v(1:2) %>% 
   footnote(1, 1, 
            value = as_paragraph('SVM: Support Vector Machines; GBM: Gradient Boosted Machines.'), 
