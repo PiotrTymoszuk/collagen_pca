@@ -522,14 +522,27 @@
    
 # Table S16: performance of the transcriptomic models at prediction of RFS --------
   
-  insert_msg('Table S16: RS prediction by the transcriptomic models')
+  insert_msg('Table S16: RFS prediction by the transcriptomic models')
   
   suppl_paper_tbl$model_survival <- surv_summary$stats %>%
+    map(function(x) if('lower_ci' %in% names(x)) {
+      
+      mutate(x, 
+             c_index = paste0(signif(c_index, 2), ' [95% CI: ', 
+                              signif(lower_ci, 2), ' to ', 
+                              signif(upper_ci, 2), ']'))
+      
+    } else {
+      
+      mutate(x, c_index = as.character(signif(c_index, 2)))
+      
+    }) %>% 
+    map(select, dataset, cohort, c_index, ibs_model) %>% 
     compress(names_to = 'algorithm') %>% 
-    select(algorithm, dataset, cohort, c_index, ibs_model) %>% 
+    relocate(algorithm) %>% 
     mutate(cohort = surv_globals$study_labels[cohort], 
            algorithm = surv_globals$algo_labels[algorithm]) %>% 
-    map_dfc(function(x) if(is.numeric(x)) signif(x, 3) else x) %>% 
+    map_dfc(function(x) if(is.numeric(x)) signif(x, 2) else x) %>% 
     set_names(c('Algorithm', 
                 'Data set type', 
                 'Cohort', 

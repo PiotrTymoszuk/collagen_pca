@@ -23,7 +23,9 @@
                              gbm = gbm_surv) %>% 
     map(~.x$stats) %>% 
     map(select, 
-        dataset, cohort, c_index, ibs_model, ibs_reference)
+        dataset, cohort, 
+        c_index, any_of(c('lower_ci', 'upper_ci')), 
+        ibs_model, ibs_reference)
   
   ## variable importance
   
