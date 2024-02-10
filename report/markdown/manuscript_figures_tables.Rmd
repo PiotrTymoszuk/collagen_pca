@@ -155,13 +155,13 @@ paper_fig$coll_score$plot
 
 __Figure \@ref(fig:fig-coll-score). Transcriptional Collagen Model of biochemical relapse-free survival.__ 
 
-_Transcriptional Collagen Score was established in the pooled GEO training cohort by multi-parameter Gradient Boosted Machine (GBM) modeling of biochemical relapse-free survival as a function of normalized $log_2$-transformed and ComBat-adjusted expression levels of `r nrow(globals$genes_interest)` collagen-related genes._
+_A multi-parameter Gradient Boosted Machine (GBM) model of biochemical relapse-free survival was trained in the pooled GEO cohort with normalized $log_2$-transformed and ComBat-adjusted expression levels of `r nrow(globals$genes_interest)` collagen-related genes._
 
 _(A) Importance of explanatory variables measured by the gradient of sum of squared errors ($\Delta SSE$) during the training process attributed to particular collagen-related transcript levels._
 
-_(B) Performance of the Elastic Net Cox model at prediction of biochemical relapse-free survival in the training TCGA cohort and test collectives assessed by concordance index (C-index, high values indicate high concordance between the predicted and observed survival) and integrated Brier score (IBS, low values indicate good model fit and proper calibration). Values of C-index and IBS expected for random survival prediction are depicted as dashed lines._
+_(B) Performance of the GBM model at prediction of biochemical relapse-free survival in the training pooled GEO cohort and test collectives assessed by concordance index (C-index, high values indicate high concordance between the predicted and observed survival) and integrated Brier score (IBS, low values indicate good model fit and proper calibration). Values of C-index and IBS expected for random survival prediction are depicted as dashed lines._
 
-_(C) Fractions of biochemical relapse-free patients in low, intermediate and high tertiles of Transcriptional Collagen Score in the training TCGA cohort, and the GSE70768 and DKFZ validation collectives presented in Kaplan-Meier plots. Differences in survival between the tertiles were investigated by Peto-Peto test. Total numbers of patients and numbers of biochemical relapses are displayed in the plot captions. P values are shown in the plots._
+_(C) Fractions of biochemical relapse-free patients in low, intermediate and high tertiles of Transcriptional Collagen Score in the training pooled GEO cohort, and the TCGA and DKFZ validation collectives presented in Kaplan-Meier plots. Differences in survival between the tertiles were investigated by Peto-Peto test. Total numbers of patients and numbers of biochemical relapses are displayed in the plot captions. P values are shown in the plots._
 
 
 \newpage
