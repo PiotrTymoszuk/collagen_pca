@@ -46,13 +46,13 @@
                    n_outcome = 138, 
                    n_total = 138 + 272)
   
-  ## urinome: detection of ISUP2+ lesions vs ISUP1 PCa
+  ## urinome: detection of ISUP2+ lesions vs benign PCa
   
   extra_kappa$data$svm_urine_isup <-
     data_from_ppnp(ppv = 58.4/100, 
                    npv = 92.8/100, 
                    n_outcome = 26, 
-                   n_total = 26 + 112)
+                   n_total = 26 + 272)
   
   ## urinome: combi models with collagen-related peptides
   ## age and PSA
@@ -67,7 +67,7 @@
     data_from_ppnp(ppv = 49.3/100, 
                    npv = 92.6/100, 
                    n_outcome = 26, 
-                   n_total = 26 + 112)
+                   n_total = 26 + 272)
   
 
 # ROC stats ------  

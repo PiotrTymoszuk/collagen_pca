@@ -57,7 +57,7 @@
         gleason_simple = car::recode(gleason_simple, 
                                      "'5 - 6' = 'ISUP1'; 
                                      '7' = 'ISUP2'; 
-                                     '8' = 'ISUP3+'"), 
+                                     '8+' = 'ISUP3+'"), 
         gleason_simple = factor(gleason_simple,  
                                 c('ISUP1', 'ISUP2', 'ISUP3+'))) %>%  
     map(map_dfc, function(x) if(is.factor(x)) droplevels(x) else x)

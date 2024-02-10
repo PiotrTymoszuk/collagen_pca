@@ -87,7 +87,7 @@
     list(x = c('n_lab', 'percent_lab', 'fraction_lab'), 
          y = paste0(c('count', '% of total cases', 'fraction of ISUP strata'), 
                    ', total: n = ', extra_pirads$plot_data$n_total[[1]], 
-                   ' PIRADS3 cases')) %>% 
+                   ' PI-RADS3 cases')) %>% 
     pmap(function(x, y) extra_pirads$plot_data %>% 
            ggplot(aes(x = observed, 
                       y = predicted, 
@@ -97,10 +97,10 @@
                      size = 2.75, 
                      color = 'black') + 
            scale_x_discrete(labels = c(negative = 'ISUP1', 
-                                       positive = 'ISUP2+'), 
+                                       positive = 'ISUP2-5'), 
                             name = 'prostate biopsy') + 
            scale_y_discrete(labels = c(negative = 'ISUP1', 
-                                       positive = 'ISUP2+'), 
+                                       positive = 'ISUP2-5'), 
                             name = 'SVM collagen urinome model') + 
            scale_fill_gradient2(low = 'steelblue', 
                                 mid = 'white', 
@@ -108,7 +108,7 @@
            guides(fill = 'none') + 
            globals$common_theme +
            theme(plot.title.position = 'plot') + 
-           labs(title = 'High-risk PCa, PIRADS3 lesions', 
+           labs(title = 'Significant PCa, PI-RADS3 lesions', 
                 subtitle = y)) %>% 
     set_names(c('count', 'percentage', 'fraction'))
   

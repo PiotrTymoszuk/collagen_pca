@@ -154,7 +154,8 @@
     clust_semi$data_umap_plots[rev(suppl_paper_fig$cohorts)] %>% 
     map(~.x + 
           theme(legend.position = 'bottom', 
-                plot.subtitle = element_blank())) %>% 
+                plot.subtitle = element_blank(), 
+                legend.text = element_text(size = 7))) %>% 
     plot_grid(plotlist = .,
               ncol = 2, 
               align = 'hv', 

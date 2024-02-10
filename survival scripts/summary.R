@@ -13,7 +13,8 @@
   
   insert_msg('Performance stats and variable importance')
   
-  ## performance stats
+  ## performance stats, for Random Forest, CI of the C-index
+  ## are not available per default
   
   surv_summary$stats <- list(ridge = ridge_surv, 
                              elnet = elnet_surv, 
@@ -26,6 +27,10 @@
         dataset, cohort, 
         c_index, any_of(c('lower_ci', 'upper_ci')), 
         ibs_model, ibs_reference)
+  
+  surv_summary$stats$rf <- surv_summary$stats$rf %>% 
+    mutate(lower_ci = NA, 
+           upper_ci = NA)
   
   ## variable importance
   
