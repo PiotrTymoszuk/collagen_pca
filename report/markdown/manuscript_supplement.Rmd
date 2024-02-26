@@ -110,7 +110,7 @@ Gene signatures of the [Reactome pathways](https://reactome.org/) were obtained 
 ssGSEA scores were computed with the `calculate()` function from the [_gseaTools_](https://github.com/PiotrTymoszuk/gseaTools) package. 
 ISUP strata were defined based on Gleason Score information as follows: ISUP1: Gleason score 5 - 6, ISUP2: Gleason score 7, ISUP3+: Gleason score $\geq$ 8.
 
-The investigated collagen-related genes included the published Collagen Signature [@Kocher2021] and the Reactome Collagen formation pathway genes (R-HSA-1474290) and were constrained to features covered by proteomic analyses of the current report (__Supplementary Table S\@ref(tab:tab-genes)__).
+The investigated collagen-related genes included the published Collagen Signature [@Kocher2021] and the Reactome collagen formation pathway genes (R-HSA-1474290) and were constrained to features covered by proteomic analyses of the current report (__Supplementary Table S\@ref(tab:tab-genes)__).
 
 ## Statistical hypothesis testing, effect size and statistical significance
 
@@ -252,6 +252,15 @@ The proportional hazard assumption of the Cox models was checked with the `summa
 Harrell's concordance index [@Harrell1996] and integrated Brier score [@Graf1999] were employed to investigate the overall concordance between the predicted and observed survival and to assess overall calibration (method `summary(type = 'fit')`, package [_coxExtensions_](https://github.com/PiotrTymoszuk/coxExtensions), __Figure 3B__ and __Supplementary Table S\@ref(tab:tab-model-survival)__). 
 Of note, as compared with several other machine learning algorithms (Ridge, Elastic Net, and LASSO Cox regression, SVM and Random Forest) [@Friedman2010; @Fouodo2018; @Ishwaran2008; @Ishwaran2022a], the GBM model demonstrated an excellent performance and the highest reproducibility at prediction of biochemical relapse-free survival in the investigated cohorts (__Supplementary Figure S\@ref(fig:fig-surv-algos)__, __Supplementary Table S\@ref(tab:tab-model-survival)__). 
 Statistical significance of differences in biochemical relapse-free survival between patients stratified by tertiles of the Transcriptional Collagen Score was determined by Peto-Peto test (functions `surv_fit()` and `surv_pvalue()`, package _survminer_, __Figure 3C__).
+
+In order to assess the confounding effect of single cohorts used to generate the pooled GEO data set on results of modeling of relapse-free survival with the best performing GBM algorithm, three nested Cox proportional hazard model were constructed with the pooled GEO data: (1) a model with cohort as the sole explanatory variable, (2) a model with normalized (Z-score) GBM linear predictor score as the sole explanatory variable, and (3) an additive full mode with cohort and normalized GBM linear predictor score as the explanatory variables. 
+Performance of the models was evaluate with C-index and integrated Brier score as described above. 
+Hazard ratio estimates for the cohort and GBM predictor terms with 95% confidence intervals were extracted from the models with the `summary()` method from the [_coxExtensions_](https://github.com/PiotrTymoszuk/coxExtensions) package. 
+Contribution of the cohort and GBM predictor terms to the additive model were explored by likelihood ratio test (LRT, method `anova()`, package _stats_). 
+As presented in __Supplementary Figure S\@ref(fig:fig-surv-cohort)A__, predictive performance of the GBM predictor and the additive Cox model adjusted for the cohort effect was nearly identical. 
+Furthermore, the cohort adjustment did not change the hazard ratio estimate of the GBM term in comparison of inference statistics of the GBM predictor-only and the additive Cox model. 
+Finally, the highly significant results of the LRT for the GBM predictor term and non-significant LRT results for the cohort term suggest strongly that the GBM predictor but not the cohort effect contribute substantially to the additive model (__Supplementary Figure S\@ref(fig:fig-surv-cohort)B__). 
+Collectively, these results let us conclude that the highly predictive results of GBM survival modeling in the GOE pooled cohort are independent from differences in relapse-free survival in single GEO cohorts. 
 
 ## Survival analysis for single collagen-related transcripts
 
@@ -630,6 +639,19 @@ __Supplementary Figure S\@ref(fig:fig-surv-algos). Comparison of performance of 
 
 _Biochemical relapse-free survival was modeled with normalized, $log_2$-transformed and ComBat-adjusted expression levels of the collagen-related genes by various machine learning algorithms (Ridge Cox regression, Elastic Net Cox regression, LASSO Cox regression, Support Vector Machines [SVM], Random Forest, and Gradient Boosted Machines [GBM]). Their performance at prediction of biochemical relapse-free survival in the training pooled GEO cohort, and the test TCGA and DKFZ collectives was assessed by Harrell's concordance index (C-index) and integrated Brier scores (IBS). High C-index values indicate good concordance between the observed and predicted survival. Low values of IBS indicate good model calibration._
 _C-index and IBS values are presented in scatter plots. Each point represents a single algorithm. Values of C-index and IBS expected for a model predicting survival at random are visualized as dashed lines._
+
+\newpage
+
+```{r fig-surv-cohort, fig.width = figur::convert(suppl_paper_fig$surv_cohort, to = 'in')$w, fig.height = figur::convert(suppl_paper_fig$surv_cohort, to = 'in')$h, fig.cap = 'Assessment of the confounding effect of the cohort on results of survival GBM modeling in the pooled GEO data set.'}
+
+suppl_paper_fig$surv_cohort$plot
+
+```
+
+__Supplementary Figure S\@ref(fig:fig-surv-cohort). Assessment of the confounding effect of the cohort on results of survival GBM modeling in the pooled GEO data set.__ 
+_To investigate the potentially confounding effect of single cohorts in the pooled GEO data set on results of GBM survival modeling, three Cox models were constructed: a cohort-only model, a model with the GBM linear predictor score as the sole explanatory factor, and an additive model with the cohort and GBM predictor score as explanatory factors._
+_(A) Evaluation of predictive performance with the Cox models in the pooled GEO cohort. Concordance between the predicted and observed survival was assessed by concordance index (C-index). Model calibration and forecast quality was measured with integrated Brier score (IBS). Single Cox models are visualized as points. Dashed lines represent values of C-index and IBS expected for a meaningless model._
+_(B) Inference of the cohort and GBM predictor terms in the Cox models. Hazard ratios (HR) with are presented with their 95% confidence intervals (CI) in a Forest plot. Results of likelihood ratio test for contribution of the cohort and GBM predictor terms to the additive model are displayed in the plot facets._
 
 \newpage
 
