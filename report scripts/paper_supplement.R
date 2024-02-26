@@ -401,9 +401,33 @@
               w = 180, 
               h = 180)
   
-# Figure S10: univariable survival: Volcano plots --------
+# Figure S10: cohort confounder in the pooled GEO cohort, GBM modeling -------
   
-  insert_msg('Figure S10: univariable survival, volcano plots')
+  insert_msg('Figure S10: cohort confunder')
+  
+  suppl_paper_fig$surv_cohort <- 
+    plot_grid(surv_cohort$stat_plot + 
+                theme(legend.position = 'none') + 
+                scale_x_continuous(limits = c(0.5, 1)) + 
+                scale_y_continuous(limits = c(0.75, 1)), 
+              surv_cohort$forest_plot, 
+              nrow = 2, 
+              rel_heights = c(0.8, 1.2), 
+              align = 'hv', 
+              axis = 'tblr', 
+              labels = LETTERS, 
+              label_size = 10) %>% 
+    as_figure(label = 'figure_s10_gm_survival_cohort_confounder', 
+              ref_name = 'surv_cohort', 
+              caption = paste('Assessment of the confounding effect of', 
+                              'the cohort on results of survival GBM modeling', 
+                              'in the pooled GEO data set.'), 
+              w = 120, 
+              h = 180)
+  
+# Figure S11: univariable survival: Volcano plots --------
+  
+  insert_msg('Figure S11: univariable survival, volcano plots')
   
   suppl_paper_fig$surv_uni_volcano <- rfs_cut$volcano_plots %>% 
     map(~.x + theme(legend.position = 'none')) %>% 
@@ -412,7 +436,7 @@
               ncol = 2, 
               align = 'hv', 
               axis = 'tblr') %>% 
-    as_figure(label = 'figure_s10_univariable_survival_volcano', 
+    as_figure(label = 'figure_s11_univariable_survival_volcano', 
               ref_name = 'surv_uni_volcano', 
               caption = paste('Differences in biochemical relapse-free', 
                               'survival between high and low expressors of the', 
@@ -420,14 +444,14 @@
               w = 180, 
               h = 180)
   
-# Figure S11: Forest plot with HR for the common survival markers --------
+# Figure S12: Forest plot with HR for the common survival markers --------
   
-  insert_msg('Figure 11: univariable survival, common genes, Forest plot')
+  insert_msg('Figure 12: univariable survival, common genes, Forest plot')
   
   suppl_paper_fig$surv_uni_forest <- 
     plot_grid(rfs_cut$common_forest_plot + 
                 theme(legend.position = 'none')) %>% 
-    as_figure(label = 'figure_s11_univariable_survival_common_markers', 
+    as_figure(label = 'figure_s12_univariable_survival_common_markers', 
               ref_name = 'surv_uni_forest', 
               caption = paste('Collagen-related transcriptional markers of', 
                               'biochemical relapse risk shared by all', 
@@ -435,9 +459,9 @@
               w = 180, 
               h = 230)
   
-# Figures S12 - S14: Kaplan-Meier plots for the common survival markers ---------
+# Figures S13 - S15: Kaplan-Meier plots for the common survival markers ---------
   
-  insert_msg('Figures S12 - S14: Kaplan-Meier plots, common survival markers')
+  insert_msg('Figures S13 - S15: Kaplan-Meier plots, common survival markers')
   
   suppl_paper_fig[c('surv_uni_detail1', 
                     'surv_uni_detail2', 
@@ -475,9 +499,9 @@
                       'surv_uni_detail2', 
                       'surv_uni_detal3')] %>% 
     list(x = ., 
-         label = c('figure_s12_univariable_survival_detail', 
-                   'figure_s13_univariable_survival_detail', 
-                   'figure_s14_univariable_survival_detail'), 
+         label = c('figure_s13_univariable_survival_detail', 
+                   'figure_s14_univariable_survival_detail', 
+                   'figure_s15_univariable_survival_detail'), 
          ref_name = names(.), 
          caption = paste('Differences in biochemical relaspse-free survival', 
                          'between high and low gene expressors:', 

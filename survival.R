@@ -86,10 +86,12 @@
     pwalk(access_cache)
   
   ## summary of the stats and plots for the multi-parameter modeling 
+  ## testing for the clinic confounder in the pooled GEO cohort
   
   c('./survival scripts/summary.R', 
     './survival scripts/plots.R', 
-    './survival scripts/clinic_plots.R') %>% 
+    './survival scripts/clinic_plots.R', 
+    './survival scripts/cohort.R') %>% 
     source_all(message = TRUE, crash = TRUE)
 
 # END -------

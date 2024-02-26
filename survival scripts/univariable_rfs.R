@@ -264,8 +264,6 @@
          subtitle = 'Biochemical relapse-free survival, shared significant effects', 
          x = 'log HR \u00B1 95% CI, high vs low expressors', 
          y = 'Cohort')
-    
-    
   
 # Caching the results ------
   

@@ -106,6 +106,9 @@
       rep('Min/max scaled relapse-free survival', 3)) %>% 
     set_names(c('ridge', 'elnet', 'lasso', 'svm', 'rf', 'gbm'))
   
+  ## comparison of the collagen models with survival models
+  ## with clinical risk factors
+  
   surv_globals$type_colors <- 
     c(clinic = 'gray60', 
       collagen = 'orangered2', 
@@ -115,6 +118,19 @@
     c(clinic = 'clinical factors', 
       collagen = 'collagen genes', 
       full = 'collagen genes + clinical factors')
+  
+  ## testing for the confounding effect of the cohort
+  ## in the TCGA BLCA cohort
+  
+  surv_globals$cohort_model_colors <- 
+    c(cohort = 'darkseagreen4', 
+      gbm_score = 'orangered2', 
+      full = 'firebrick4')
+  
+  surv_globals$cohort_model_labels <- 
+    c(cohort = 'cohort', 
+      gbm_score = 'GBM predictor', 
+      full = 'GBM predictor + cohort')
   
 # CV folds used for tuning of the GLMNET models -----
   

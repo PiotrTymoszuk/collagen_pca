@@ -11,6 +11,12 @@
   
   insert_msg('Analysis data')
   
+  ## data set labels
+  
+  ana_rfs$study_labels <- 
+    c(geo = 'pooled GEO', 
+      globals$study_labels[c("tcga", "dkfz")])
+  
   ## survival
   
   ana_rfs$data <- globals$study_exprs %>% 
@@ -26,7 +32,19 @@
   ana_rfs$data <- 
     map2(ana_rfs$data, 
          ana_globals$assignment[names(ana_rfs$data)], 
-         left_join, by = 'sample_id')
+         left_join, by = 'sample_id') %>% 
+    map(filter, 
+        !is.na(relapse),
+        !is.na(rfs_months))
+  
+  ## the pooled GEO cohort: as discussed in the manuscript text.
+  ## single GEO cohorts are likely underpowered
+  
+  ana_rfs$data$geo <- 
+    ana_rfs$data[c("gse54460", "gse70768", "gse70769", "gse220095")] %>% 
+    compress(names_to = 'cohort')
+  
+  ana_rfs$data <- ana_rfs$data[c("geo", "tcga", "dkfz")]
   
 # n numbers ------
   
@@ -78,7 +96,7 @@
   
   ana_rfs$plots <- 
     list(fit = ana_rfs$survfit_obj, 
-         title = globals$study_labels[names(ana_rfs$survfit_obj)], 
+         title = ana_rfs$study_labels[names(ana_rfs$survfit_obj)], 
          legend.labs = ana_rfs$n_labs, 
          pval = ana_rfs$test$significance) %>% 
     pmap(ggsurvplot, 

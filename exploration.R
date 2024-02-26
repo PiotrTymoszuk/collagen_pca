@@ -26,6 +26,9 @@
   library(microViz)
   library(clustTools)
 
+  library(survival)
+  library(survminer)
+
   library(ggrepel)
   library(ggtext)
   
@@ -47,12 +50,20 @@
   
   insert_msg('Analysis scripts')
   
+  ## general distribution stats
+  ## coexpression and clustering tendency analysis
+  
   c('./exploration scripts/cohorts.R', 
     './exploration scripts/distribution.R', 
     './exploration scripts/coexpression.R', 
     './exploration scripts/clust_tendency.R') %>% 
     source_all(message = TRUE, crash = TRUE) %>% 
     print
+  
+  ## characteristic of the pooled GEO cohort
+  
+  c('./exploration scripts/pooled_geo.R') %>% 
+    source_all(message = TRUE, crash = TRUE)
   
 # END ------
   
